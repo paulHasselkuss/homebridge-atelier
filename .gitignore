@@ -4,7 +4,7 @@ dist
 # Editors
 .fleet
 .vscode
-
+sftp-config*
 
 # Created by https://www.toptal.com/developers/gitignore/api/node,macos,linux,windows,webstorm
 # Edit at https://www.toptal.com/developers/gitignore?templates=node,macos,linux,windows,webstorm

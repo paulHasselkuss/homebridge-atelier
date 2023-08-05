@@ -4,6 +4,8 @@ export class DeviceStatus {
 
   constructor(
     public isOn: boolean,
+    public volume: number,
+    public isMute: boolean,
     public lastUpdated: number,
   ) { }
 
@@ -21,8 +23,16 @@ export class DeviceStatus {
     }
     if (matches[1] === '0') {
       this.isOn = true;
+    } else if (matches[1] === '1'){
+      this.volume = +matches[2];
+    } else if (matches[1] === '6'){
+      this.isMute = this.parseBoolean(matches[2]);
     } else {
       return;
     }
+  }
+
+  private parseBoolean(str: string): boolean {
+    return str.charAt(1) === 'Y';
   }
 }

@@ -1,7 +1,7 @@
-import {Logger, PlatformAccessory, Service} from 'homebridge';
+import {Logger, PlatformAccessory, Service, WithUUID} from 'homebridge';
 
 import {AtelierPlatform} from './platform';
-import { Device } from './atelier/device';
+import {Device} from './atelier/device';
 
 /**
  * Platform Accessory
@@ -10,6 +10,7 @@ import { Device } from './atelier/device';
  */
 export class AtelierAccessory {
   private readonly switchService: Service;
+  private readonly speakerService: Service;
   private readonly log: Logger;
   private readonly device: Device;
 
@@ -27,21 +28,25 @@ export class AtelierAccessory {
       .setCharacteristic(this.platform.Characteristic.Model, accessory.context.name)
       .setCharacteristic(this.platform.Characteristic.SerialNumber, '000000');
 
-    // get the Switch service if it exists, otherwise create a new Switch service
-    // you can create multiple services for each accessory
-    this.switchService = this.accessory.getService(this.platform.Service.Switch) || this.accessory.addService(this.platform.Service.Switch);
-
-    // set the service name, this is what is displayed as the default name on the Home app
-    // in this example we are using the name we stored in the `accessory.context` in the `name` method.
+    // switch
+    this.switchService = this.getOrCreateService(this.platform.Service.Switch);
     this.switchService.setCharacteristic(this.platform.Characteristic.Name, accessory.context.name);
-
-    // each service must implement at-minimum the "required characteristics" for the given service type
-    // see https://developers.homebridge.io/#/service/Switch
-
-    // register handlers for the On/Off Characteristic
     this.switchService.getCharacteristic(this.platform.Characteristic.On)
       .onGet(this.handleOnGet.bind(this))
       .onSet(this.handleOnSet.bind(this));
+
+    // speaker
+    this.speakerService = this.getOrCreateService(this.platform.Service.Speaker);
+    this.speakerService.setCharacteristic(this.platform.Characteristic.Name, accessory.context.name);
+    this.speakerService.getCharacteristic(this.platform.Characteristic.Mute)
+      .onGet(this.handleMuteGet.bind(this))
+      .onSet(this.handleMuteSet.bind(this));
+    this.speakerService.getCharacteristic(this.platform.Characteristic.Active)
+      .onGet(this.handleOnGet.bind(this))
+      .onSet(this.handleOnSet.bind(this));
+    this.speakerService.getCharacteristic(this.platform.Characteristic.Volume)
+      .onGet(this.handleVolumeGet.bind(this));
+      //.onSet(this.handleVolumeSet.bind(this));
   }
 
   /**
@@ -58,6 +63,36 @@ export class AtelierAccessory {
   async handleOnSet(value) {
     this.log.debug('Triggered SET On:', value);
     this.device.toogleOnOff(value);
+  }
+
+  /**
+   * Handle requests to get the current value of the "On" characteristic
+   */
+  async handleMuteGet() {
+    this.log.debug('Triggered GET Mute');
+    return this.device.isMute();
+  }
+
+  /**
+   * Handle requests to set the "On" characteristic
+   */
+  async handleMuteSet(value) {
+    this.log.debug('Triggered SET Mute:', value);
+    this.device.toogleMute(value);
+  }
+
+  async handleVolumeGet() {
+    this.log.debug('Triggered GET Volume');
+    return this.device.getVolume();
+  }
+
+  async handleVolumeSet(value) {
+    this.log.debug('Triggered SET Volume:', value);
+    this.device.setVolume(value);
+  }
+
+  private getOrCreateService(name: string | WithUUID<any>) {
+    return this.accessory.getService(name) || this.accessory.addService(name);
   }
 
 }

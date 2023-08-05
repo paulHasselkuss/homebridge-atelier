@@ -1,7 +1,7 @@
-import { SerialPort, ReadlineParser } from 'serialport';
-import { Logger } from 'homebridge';
-import { DeviceStatus } from './deviceStatus';
-import { Command } from './command';
+import {SerialPort, ReadlineParser} from 'serialport';
+import {Logger} from 'homebridge';
+import {DeviceStatus} from './deviceStatus';
+import {Command} from './command';
 
 export class Device {
 
@@ -12,7 +12,7 @@ export class Device {
   private readonly port: SerialPort;
   private readonly status: DeviceStatus;
 
-  constructor (
+  constructor(
     pathToDevice: string,
     private readonly log: Logger,
   ) {
@@ -29,9 +29,9 @@ export class Device {
       this.log.debug('Port opened succesfully.');
     });
 
-    this.status = new DeviceStatus(false, 0);
+    this.status = new DeviceStatus(false, 0, false, 0);
 
-    const parser = this.port.pipe(new ReadlineParser({ delimiter: Device.STAT_DELIMITER }));
+    const parser = this.port.pipe(new ReadlineParser({delimiter: Device.STAT_DELIMITER}));
     parser.on('data', (input) => {
       input = input.toString();
       this.log.debug('Reading from port: ', input);
@@ -49,6 +49,36 @@ export class Device {
     return this.getStatus().isOn;
   }
 
+  toogleMute(state: boolean) {
+    if (this.isMute() !== state) {
+      this.write(Command.MUTE);
+    }
+  }
+
+  isMute(): boolean {
+    return this.getStatus().isMute;
+  }
+
+  setVolume(value: number) {
+    if (value > 50 ) {
+      return;
+    }
+    let diff = value - this.getVolume();
+    const cmd = diff < 0 ? Command.VOLUME_DOWN : Command.VOLUME_UP;
+    this.log.debug('Setting volume to %s, difference is %s.', value, diff);
+
+    //the first command only makes the receiver display the current volume
+    this.write(cmd, false);
+    diff = Math.abs(diff);
+    for (let i = 0; i < diff; i++) {
+      this.write(cmd);
+    }
+  }
+
+  getVolume(): number {
+    return this.getStatus().volume;
+  }
+
   private getStatus(): DeviceStatus {
     const diff = Date.now() - this.status.lastUpdated;
     this.log.debug('Status was last updated %s ms ago.', diff);
@@ -60,13 +90,15 @@ export class Device {
     return this.status;
   }
 
-  private write(cmd: Command): void {
-    this.port.write(cmd.toString(), (err)=>{
+  private write(cmd: Command, runCallback = true): void {
+    this.port.write(cmd.toString(), (err) => {
       if (err) {
         return this.log.error('Error while writing commad to port: ', err.message);
       }
       this.log.debug('Command written to port', cmd);
-      cmd.callback(this.status);
+      if (runCallback) {
+        cmd.callback(this.status);
+      }
     });
   }
 

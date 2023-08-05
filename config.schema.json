@@ -1,16 +1,45 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "AtelierRs232HomebridgePlugin",
   "pluginType": "platform",
   "singular": true,
+  "footerDisplay": "The device running HomeBridge must be connected to the receiver. The connection must be accessible under the given path and writable for the user running HomeBridge.",
   "schema": {
-    "type": "object",
-    "properties": {
-      "name": {
-        "title": "Name",
-        "type": "string",
-        "required": true,
-        "default": "Example Dynamic Platform"
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "devices": {
+      "type": "array",
+      "items": {
+        "title": "Devices",
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string",
+            "placeholder": "Atelier R4",
+            "required": true
+          },
+          "path": {
+            "title": "RS232 Path",
+            "type": "string",
+            "placeholder": "/dev/ttyUSB0",
+            "required": true
+          }
+        }
       }
     }
-  }
+  },
+  "layout": [
+    {
+      "key": "devices",
+      "type": "array",
+      "orderable": false,
+      "buttonText": "Add Atelier Device",
+      "items": [
+        "devices[].name",
+        "devices[].path"
+      ]
+    }
+  ]
 }

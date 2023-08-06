@@ -1,4 +1,4 @@
-import {Logger, PlatformAccessory, Service, WithUUID} from 'homebridge';
+import {Characteristic, Logger, PlatformAccessory, Service, WithUUID} from 'homebridge';
 
 import {AtelierPlatform} from './platform';
 import {Device} from './atelier/device';
@@ -20,7 +20,6 @@ export class AtelierAccessory {
   ) {
 
     this.log = this.platform.log;
-    this.device = new Device(accessory.context.path, this.log);
 
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
@@ -46,49 +45,60 @@ export class AtelierAccessory {
       .onSet(this.handleOnSet.bind(this));
     this.speakerService.getCharacteristic(this.platform.Characteristic.Volume)
       .onGet(this.handleVolumeGet.bind(this));
-      //.onSet(this.handleVolumeSet.bind(this));
+      //.onSet(this.handleVolumeSet.bind(this)); // was not reliable enough :(
+
+    //device
+    this.device = new Device(accessory.context.path, this.log);
+    const status = this.device.status();
+    status.on('isOn', this.handleOnUpdate.bind(this))
+      .on('isMute', this.handleMuteUpdate.bind(this))
+      .on('volume', this.handleVolumeUpdate.bind(this))
   }
 
-  /**
-   * Handle requests to get the current value of the "On" characteristic
-   */
   async handleOnGet() {
     this.log.debug('Triggered GET On');
-    return this.device.isOn();
+    return this.device.status().isOn;
   }
 
-  /**
-   * Handle requests to set the "On" characteristic
-   */
+  handleOnUpdate(value) {
+    this.log.debug('Triggered UPDATE On');
+    this.switchService.updateCharacteristic(this.platform.Characteristic.On, value);
+    this.speakerService.updateCharacteristic(this.platform.Characteristic.Active, value)
+  }
+
   async handleOnSet(value) {
     this.log.debug('Triggered SET On:', value);
-    this.device.toogleOnOff(value);
+    this.device.isOn(value);
   }
 
-  /**
-   * Handle requests to get the current value of the "On" characteristic
-   */
   async handleMuteGet() {
     this.log.debug('Triggered GET Mute');
-    return this.device.isMute();
+    return this.device.status().isMute;
   }
 
-  /**
-   * Handle requests to set the "On" characteristic
-   */
+  handleMuteUpdate(value) {
+    this.log.debug('Triggered UPDATE Mute');
+    this.speakerService.updateCharacteristic(this.platform.Characteristic.Mute, value)
+  }
+
   async handleMuteSet(value) {
     this.log.debug('Triggered SET Mute:', value);
-    this.device.toogleMute(value);
+    this.device.isMute(value);
   }
 
   async handleVolumeGet() {
     this.log.debug('Triggered GET Volume');
-    return this.device.getVolume();
+    return this.device.status().volume;
+  }
+
+  handleVolumeUpdate(value) {
+    this.log.debug('Triggered UPDATE Volume');
+    this.speakerService.updateCharacteristic(this.platform.Characteristic.Volume, value)
   }
 
   async handleVolumeSet(value) {
     this.log.debug('Triggered SET Volume:', value);
-    this.device.setVolume(value);
+    this.device.volume(value);
   }
 
   private getOrCreateService(name: string | WithUUID<any>) {

@@ -1,4 +1,4 @@
-import {Characteristic, Logger, PlatformAccessory, Service, WithUUID} from 'homebridge';
+import {Logger, PlatformAccessory, Service, WithUUID} from 'homebridge';
 
 import {AtelierPlatform} from './platform';
 import {Device} from './atelier/device';
@@ -45,14 +45,14 @@ export class AtelierAccessory {
       .onSet(this.handleOnSet.bind(this));
     this.speakerService.getCharacteristic(this.platform.Characteristic.Volume)
       .onGet(this.handleVolumeGet.bind(this));
-      //.onSet(this.handleVolumeSet.bind(this)); // was not reliable enough :(
+    //.onSet(this.handleVolumeSet.bind(this)); // was not reliable enough :(
 
     //device
     this.device = new Device(accessory.context.path, this.log);
     const status = this.device.status();
     status.on('isOn', this.handleOnUpdate.bind(this))
       .on('isMute', this.handleMuteUpdate.bind(this))
-      .on('volume', this.handleVolumeUpdate.bind(this))
+      .on('volume', this.handleVolumeUpdate.bind(this));
   }
 
   async handleOnGet() {
@@ -63,7 +63,7 @@ export class AtelierAccessory {
   handleOnUpdate(value) {
     this.log.debug('Triggered UPDATE On');
     this.switchService.updateCharacteristic(this.platform.Characteristic.On, value);
-    this.speakerService.updateCharacteristic(this.platform.Characteristic.Active, value)
+    this.speakerService.updateCharacteristic(this.platform.Characteristic.Active, value);
   }
 
   async handleOnSet(value) {
@@ -78,7 +78,7 @@ export class AtelierAccessory {
 
   handleMuteUpdate(value) {
     this.log.debug('Triggered UPDATE Mute');
-    this.speakerService.updateCharacteristic(this.platform.Characteristic.Mute, value)
+    this.speakerService.updateCharacteristic(this.platform.Characteristic.Mute, value);
   }
 
   async handleMuteSet(value) {
@@ -93,7 +93,7 @@ export class AtelierAccessory {
 
   handleVolumeUpdate(value) {
     this.log.debug('Triggered UPDATE Volume');
-    this.speakerService.updateCharacteristic(this.platform.Characteristic.Volume, value)
+    this.speakerService.updateCharacteristic(this.platform.Characteristic.Volume, value);
   }
 
   async handleVolumeSet(value) {

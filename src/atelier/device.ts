@@ -1,13 +1,14 @@
-import { Logger } from "homebridge";
-import { ReadlineParser, SerialPort } from "serialport";
-import { Command } from "./command";
-import { DeviceStatus } from "./deviceStatus";
+import { Logger } from 'homebridge';
+import { ReadlineParser, SerialPort } from 'serialport';
+import { Command } from './command';
+import { DeviceStatus } from './deviceStatus';
 
 export class Device {
 
   private static BAUD_RATE = 300;
   private static STAT_DELIMITER = '\r\n';
-  private static STATUS_THRESHOLD = 60 * 1000;
+  private static STATUS_TIMEOUT = 3 * 1000;
+  private static STATUS_UPDATE_THRESHOLD = 60 * 1000;
 
   private readonly _port: SerialPort;
   private readonly _status: DeviceStatus;
@@ -15,7 +16,7 @@ export class Device {
   constructor(
     pathToDevice: string,
     private readonly log: Logger,
-    ) {
+  ) {
 
     this.log.debug('Opening port to: ', pathToDevice);
     this._port = new SerialPort({
@@ -27,7 +28,7 @@ export class Device {
       if (err) {
         return this.log.error('Error opening port: ', err.message);
       }
-      this.log.debug('Port opened succesfully.');
+      this.log.debug('Port opened successfully.');
     });
 
     this._status = new DeviceStatus(false, 0, false, 0);
@@ -41,19 +42,19 @@ export class Device {
   }
 
   isOn(value: boolean) {
-    if (this.status().isOn != value) {
+    if (this.status().isOn !== value) {
       this.write(Command.ON_OFF);
     }
   }
 
   isMute(value: boolean) {
-    if (this.status().isMute != value) {
+    if (this.status().isMute !== value) {
       this.write(Command.MUTE);
     }
   }
 
   volume(value: number) {
-    // Note: this does not work reliably. Homekit may initiats changes while the process is still running. As result, values are off. 
+    // Note: this does not work reliably. Homekit may initiats changes while the process is still running. As result, values are off.
     // Additionally, the double sending below causes further trouble if send twice (for two seperated runs).
     const start = this.status().volume;
     let diff = value - start;
@@ -73,7 +74,7 @@ export class Device {
   status(): DeviceStatus {
     const diff = Date.now() - this._status.lastUpdated;
     this.log.debug('Status was last updated %s ms ago.', diff);
-    if (diff > Device.STATUS_THRESHOLD) {
+    if (diff > Device.STATUS_UPDATE_THRESHOLD) {
       this.log.debug('Resetting and updating status...');
       this.updateStatus();
     }
@@ -83,7 +84,7 @@ export class Device {
   private write(cmd: Command, runCallback = true): void {
     this._port.write(cmd.toString(), (err) => {
       if (err) {
-        return this.log.error('Error while writing commad to port: ', err.message);
+        return this.log.error('Error while writing command to port: ', err.message);
       }
       this.log.debug('Command written to port', cmd);
       if (runCallback) {
@@ -100,7 +101,7 @@ export class Device {
       if (then === this._status.lastUpdated) {
         this._status.isOn = false;
       }
-    }, 3 * 1000);
+    }, Device.STATUS_TIMEOUT);
   }
 
 }

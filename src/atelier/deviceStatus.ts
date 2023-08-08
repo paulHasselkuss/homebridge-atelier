@@ -1,4 +1,4 @@
-import EventEmitter from "events";
+import EventEmitter from 'events';
 
 export class DeviceStatus extends EventEmitter {
 
@@ -9,24 +9,26 @@ export class DeviceStatus extends EventEmitter {
     private _volume: number,
     private _isMute: boolean,
     public lastUpdated: number,
-  ) { super();}
+  ) {
+    super();
+  }
 
   set isOn(value: boolean) {
     this._isOn = value;
     this.lastUpdated = Date.now();
-    this.emit("isOn", this._isOn);
+    this.emit('isOn', this._isOn);
   }
 
   set volume(value: number) {
     this._volume = value;
     this.lastUpdated = Date.now();
-    this.emit("volume", this._volume);
+    this.emit('volume', this._volume);
   }
 
   set isMute(value: boolean) {
     this._isMute = value;
     this.lastUpdated = Date.now();
-    this.emit("isMute", this._isMute);
+    this.emit('isMute', this._isMute);
   }
 
   get isOn() {

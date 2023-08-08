@@ -1,4 +1,4 @@
-import {Logger, PlatformAccessory, Service, WithUUID} from 'homebridge';
+import {Logger, PlatformAccessory, Service} from 'homebridge';
 
 import {AtelierPlatform} from './platform';
 import {Device} from './atelier/device';
@@ -101,8 +101,8 @@ export class AtelierAccessory {
     this.device.volume(value);
   }
 
-  private getOrCreateService(name: string | WithUUID<any>) {
-    return this.accessory.getService(name) || this.accessory.addService(name);
+  private getOrCreateService(service) {
+    return this.accessory.getService(service) || this.accessory.addService(service);
   }
 
 }

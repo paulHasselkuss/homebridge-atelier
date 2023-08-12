@@ -14,6 +14,7 @@ export class Device {
   private readonly _status: DeviceStatus;
 
   private _isVolumeChangeRunning = false;
+  private _changeVolumeTo = -1;
 
   constructor(
     pathToDevice: string,
@@ -55,33 +56,16 @@ export class Device {
     }
   }
 
-  async volume(value: number) {
-    if (this._isVolumeChangeRunning) {
-      this.log.warn('Volume change in progress, ignoring new request to change the volume to %s.', value);
-      return;
-    }
+  volume(value: number) {
     if (value > 50) {
       this.log.warn('Got request to change volume to %s. Ignoring the request since it is above the allowed maximum.');
       return;
     }
-
-    const start = this.status().volume;
-    const diff = Math.abs(value - start);
-    const cmd = start < value ? Command.VOLUME_UP : Command.VOLUME_DOWN;
-
-    this.log.debug('Starting to change volume from %s to %s (difference is %s).', start, value, diff);
-    this._isVolumeChangeRunning = true;
-
-    //the first command only makes the receiver display the current volume
-    this.write(cmd, false);
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    for (let i = 0; i < diff; i++) {
-      this.write(cmd);
-      await new Promise(resolve => setTimeout(resolve, 500));
+    this._changeVolumeTo = value;
+    if (!this._isVolumeChangeRunning) {
+      this._isVolumeChangeRunning = true;
+      this.startVolumeChange().then(()=>this._isVolumeChangeRunning=false);
     }
-    this.log.debug('Volume change to %s finished.', value);
-    this._isVolumeChangeRunning = false;
   }
 
   status(): DeviceStatus {
@@ -93,13 +77,6 @@ export class Device {
     }
     return this._status;
   }
-
-  sleep(time: number) {
-    return new Promise(resolve => {
-      setTimeout(resolve, time);
-    });
-  }
-
 
   private write(cmd: Command, runCallback = true): void {
     this._port.write(cmd.toString(), (err) => {
@@ -124,6 +101,25 @@ export class Device {
         this._status.isOn = false;
       }
     }, Device.STATUS_TIMEOUT);
+  }
+
+  private async startVolumeChange() {
+    this.log.debug('Starting to change volume to %s', this._changeVolumeTo);
+
+    //the first command only makes the receiver display the current volume
+    this.write(Command.VOLUME_UP, false);
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    do {
+      const current = this._status.volume;
+      const goal = this._changeVolumeTo;
+      const cmd = current < goal ? Command.VOLUME_UP : Command.VOLUME_DOWN;
+
+      this.write(cmd);
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } while (this._status.volume !== this._changeVolumeTo);
+
+    this.log.debug('Volume change to %s finished.', this._changeVolumeTo);
   }
 
 }

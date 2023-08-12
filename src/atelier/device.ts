@@ -13,6 +13,8 @@ export class Device {
   private readonly _port: SerialPort;
   private readonly _status: DeviceStatus;
 
+  private _isVolumeChangeRunning = false;
+
   constructor(
     pathToDevice: string,
     private readonly log: Logger,
@@ -53,22 +55,33 @@ export class Device {
     }
   }
 
-  volume(value: number) {
-    // Note: this does not work reliably. Homekit may initiats changes while the process is still running. As result, values are off.
-    // Additionally, the double sending below causes further trouble if send twice (for two seperated runs).
+  async volume(value: number) {
+    if (this._isVolumeChangeRunning) {
+      this.log.warn('Volume change in progress, ignoring new request to change the volume to %s.', value);
+      return;
+    }
+    if (value > 50) {
+      this.log.warn('Got request to change volume to %s. Ignoring the request since it is above the allowed maximum.');
+      return;
+    }
+
     const start = this.status().volume;
-    let diff = value - start;
-    const cmd = diff < 0 ? Command.VOLUME_DOWN : Command.VOLUME_UP;
-    this.log.debug('Setting volume from %s to %s, difference is %s.', start, value, diff);
+    const diff = Math.abs(value - start);
+    const cmd = start < value ? Command.VOLUME_UP : Command.VOLUME_DOWN;
+
+    this.log.debug('Starting to change volume from %s to %s (difference is %s).', start, value, diff);
+    this._isVolumeChangeRunning = true;
 
     //the first command only makes the receiver display the current volume
     this.write(cmd, false);
-    diff = Math.abs(diff);
-    for (let i = 1; i <= diff; i++) {
-      setTimeout(() => {
-        this.write(cmd);
-      }, 100 * i);
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    for (let i = 0; i < diff; i++) {
+      this.write(cmd);
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
+    this.log.debug('Volume change to %s finished.', value);
+    this._isVolumeChangeRunning = false;
   }
 
   status(): DeviceStatus {
@@ -80,6 +93,13 @@ export class Device {
     }
     return this._status;
   }
+
+  sleep(time: number) {
+    return new Promise(resolve => {
+      setTimeout(resolve, time);
+    });
+  }
+
 
   private write(cmd: Command, runCallback = true): void {
     this._port.write(cmd.toString(), (err) => {

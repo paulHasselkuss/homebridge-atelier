@@ -25,7 +25,7 @@ export class AtelierAccessory {
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Braun')
       .setCharacteristic(this.platform.Characteristic.Model, accessory.context.name)
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, '000000');
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, 'n/a');
 
     // switch
     this.switchService = this.getOrCreateService(this.platform.Service.Switch);
@@ -44,8 +44,8 @@ export class AtelierAccessory {
       .onGet(this.handleOnGet.bind(this))
       .onSet(this.handleOnSet.bind(this));
     this.speakerService.getCharacteristic(this.platform.Characteristic.Volume)
-      .onGet(this.handleVolumeGet.bind(this));
-    //.onSet(this.handleVolumeSet.bind(this)); // was not reliable enough :(
+      .onGet(this.handleVolumeGet.bind(this))
+      .onSet(this.handleVolumeSet.bind(this)); // use with care!
 
     //device
     this.device = new Device(accessory.context.path, this.log);

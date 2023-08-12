@@ -9,6 +9,7 @@ export class Device {
   private static STAT_DELIMITER = '\r\n';
   private static STATUS_TIMEOUT = 3 * 1000;
   private static STATUS_UPDATE_THRESHOLD = 60 * 1000;
+  private static MAX_VOLUME = 60;
 
   private readonly _port: SerialPort;
   private readonly _status: DeviceStatus;
@@ -57,9 +58,13 @@ export class Device {
   }
 
   volume(value: number) {
-    if (value > 50) {
-      this.log.warn('Got request to change volume to %s. Ignoring the request since it is above the allowed maximum.');
-      return;
+    if (value < 0) {
+      this.log.warn('Cannot set the volume >0!');
+      value = 0;
+    }
+    if (value > Device.MAX_VOLUME) {
+      this.log.debug('A volume of %s is above the maximum of %s. Using the maximum instead.', value, Device.MAX_VOLUME);
+      value = Device.MAX_VOLUME;
     }
     this._changeVolumeTo = value;
     if (!this._isVolumeChangeRunning) {

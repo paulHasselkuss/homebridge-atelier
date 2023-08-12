@@ -3,14 +3,14 @@
   "displayName": "Homebridge Atelier (RS232)",
   "name": "homebridge-atelier-rs232",
   "version": "1.0.0",
-  "description": "Connects to Braun Atelier receivers via the RS232 interface.",
+  "description": "Homebridge plugin allows you to control your Braun Atelier R4 or CC4 receiver",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/paulHasselkuss/homebridge-r4.git"
+    "url": "https://github.com/paulHasselkuss/homebridge-atelier.git"
   },
   "bugs": {
-    "url": "https://github.com/paulHasselkuss/homebridge-r4/issues"
+    "url": "https://github.com/paulHasselkuss/homebridge-atelier/issues"
   },
   "engines": {
     "node": "^18.17.0",

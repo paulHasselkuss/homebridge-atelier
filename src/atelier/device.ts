@@ -98,7 +98,9 @@ export class Device {
     this.write(Command.XMIT_STAT);
     this._status.lastUpdated = then;
     setTimeout(() => {
+      this.log.debug('Status update was requested at %s, last update was at %s.', then, this._status.lastUpdated);
       if (then === this._status.lastUpdated) {
+        this.log.debug('Device seems to be offline, setting _status.isOn to false.');
         this._status.isOn = false;
       }
     }, Device.STATUS_TIMEOUT);

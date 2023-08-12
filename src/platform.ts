@@ -1,6 +1,6 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
-import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
+import { PLUGIN_NAME } from './settings';
 import { AtelierAccessory } from './platformAccessory';
 
 /**
@@ -91,12 +91,14 @@ export class AtelierPlatform implements DynamicPlatformPlugin {
         accessory.context.name = displayName;
         accessory.context.path = path;
 
+        accessory.category = 34; //34 = audio receiver
+
         // create the accessory handler for the newly create accessory
         // this is imported from `platformAccessory.ts`
         new AtelierAccessory(this, accessory);
 
         // link the accessory to your platform
-        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+        this.api.publishExternalAccessories(PLUGIN_NAME, [accessory]);
       }
     }
   }

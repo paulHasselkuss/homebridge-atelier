@@ -35,17 +35,24 @@ export class AtelierAccessory {
       .onSet(this.handleOnSet.bind(this));
 
     // speaker
-    this.speakerService = this.getOrCreateService(this.platform.Service.Speaker);
+    this.speakerService = this.getOrCreateService(this.platform.Service.SmartSpeaker);
     this.speakerService.setCharacteristic(this.platform.Characteristic.Name, accessory.context.name);
-    this.speakerService.getCharacteristic(this.platform.Characteristic.Mute)
-      .onGet(this.handleMuteGet.bind(this))
-      .onSet(this.handleMuteSet.bind(this));
-    this.speakerService.getCharacteristic(this.platform.Characteristic.Active)
-      .onGet(this.handleOnGet.bind(this))
-      .onSet(this.handleOnSet.bind(this));
+
     this.speakerService.getCharacteristic(this.platform.Characteristic.Volume)
       .onGet(this.handleVolumeGet.bind(this))
       .onSet(this.handleVolumeSet.bind(this)); // use with care!
+    this.speakerService.getCharacteristic(this.platform.Characteristic.Mute)
+      .onGet(this.handleMuteGet.bind(this))
+      .onSet(this.handleMuteSet.bind(this));
+
+    this.speakerService.getCharacteristic(this.platform.Characteristic.Active)
+      .onGet(this.handleOnGet.bind(this))
+      .onSet(this.handleOnSet.bind(this));
+    this.speakerService.getCharacteristic(this.platform.Characteristic.CurrentMediaState)
+      .onGet(this.handleCurrentMediaStateGet.bind(this));
+    this.speakerService.getCharacteristic(this.platform.Characteristic.TargetMediaState)
+      .onGet(this.handleCurrentMediaStateGet.bind(this))
+      .onSet(this.handleTargetMediaStateSet.bind(this));
 
     //device
     this.device = new Device(accessory.context.path, this.log);
@@ -53,6 +60,18 @@ export class AtelierAccessory {
     status.on('isOn', this.handleOnUpdate.bind(this))
       .on('isMute', this.handleMuteUpdate.bind(this))
       .on('volume', this.handleVolumeUpdate.bind(this));
+  }
+
+  async handleCurrentMediaStateGet(){
+    if (await this.handleOnGet()) {
+      return this.platform.Characteristic.CurrentMediaState.PLAY;
+    } else {
+      return this.platform.Characteristic.CurrentMediaState.STOP;
+    }
+  }
+
+  async handleTargetMediaStateSet(value) {
+    await this.handleOnSet(value === this.platform.Characteristic.CurrentMediaState.PLAY);
   }
 
   async handleOnGet() {

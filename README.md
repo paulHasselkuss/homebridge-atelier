@@ -9,7 +9,9 @@ Only devices from the first generation are supported (R4/1 and CC4/1), devices f
 ## Usage
 The device running Homebridge needs to be connected directly to the Atelier device using an appropriate serial cable. The plugin communicates with the receiver using control sequences, see [docs.md](docs.md) for more information.
 
-Two accessories are exposed, a switch and a speaker. The switch allows to toggle the receiver on and off, and the speaker includes controls to toggle on/off, mute, and read the current volume. (Setting the volume is currently not supported due to technical difficulties.)
+Two accessories are exposed, a switch and a speaker. The switch allows to toggle the receiver on and off, and the speaker includes controls to toggle on/off, mute, and read the current volume.
+
+Devices need to be manually added to HomeKit, even if HomeBridge has already been added. Check the log after activating and configuring this plugin.
 
 ## Configuration
 The easiest way to use this plugin is to use [homebridge-config-ui-x](https://github.com/homebridge/homebridge-config-ui-x). To configure manually, add the `AtelierRs232HomebridgePlugin` platform in your `config.json` file. Then, add the name and path for the devices to monitor:

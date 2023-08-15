@@ -7,7 +7,6 @@ export class Device {
 
   private static BAUD_RATE = 300;
   private static STAT_DELIMITER = '\r\n';
-  private static STATUS_TIMEOUT = 3 * 1000;
   private static STATUS_UPDATE_THRESHOLD = 60 * 1000;
 
   private readonly _port: SerialPort;
@@ -18,7 +17,6 @@ export class Device {
 
   constructor(
     pathToDevice: string,
-    private readonly maxVolume: number,
     private readonly log: Logger,
   ) {
 
@@ -35,7 +33,7 @@ export class Device {
       this.log.debug('Port opened successfully.');
     });
 
-    this._status = new DeviceStatus(false, 0, false, 0);
+    this._status = DeviceStatus.createDummy();
 
     const parser = this._port.pipe(new ReadlineParser({delimiter: Device.STAT_DELIMITER}));
     parser.on('data', (input) => {
@@ -57,20 +55,18 @@ export class Device {
     }
   }
 
-  volume(percentage: number) {
-    if (percentage < 0) {
+  volume(value: number) {
+    if (value < 0) {
       this.log.warn('Cannot set the volume >0!');
-      percentage = 0;
+      value = 0;
     }
-    if (percentage > 100) {
+    if (value > 75) {
       this.log.warn('Cannot set the volume <100!');
-      percentage = 100;
+      value = 75;
 
     }
-    const realVolume = Math.round(this.maxVolume / 100 * percentage);
-    this.log.debug('Setting volume to %s (%s% of the maximum volume %s).', realVolume, percentage, this.maxVolume);
 
-    this._changeVolumeTo = realVolume;
+    this._changeVolumeTo = value;
     if (!this._isVolumeChangeRunning) {
       this._isVolumeChangeRunning = true;
       this.startVolumeChange().then(()=>this._isVolumeChangeRunning=false);
@@ -82,9 +78,18 @@ export class Device {
     this.log.debug('Status was last updated %s ms ago.', diff);
     if (diff > Device.STATUS_UPDATE_THRESHOLD) {
       this.log.debug('Resetting and updating status...');
-      this.updateStatus();
+      this.write(Command.XMIT_STAT);
     }
     return this._status;
+  }
+
+  shutdown() {
+    this._port.close((err) => {
+      if (err) {
+        return this.log.error('Error closing port: ', err.message);
+      }
+      this.log.debug('Port closed successfully.');
+    });
   }
 
   private write(cmd: Command, runCallback = true): void {
@@ -97,19 +102,6 @@ export class Device {
         cmd.callback(this._status);
       }
     });
-  }
-
-  private updateStatus() {
-    const then = Date.now();
-    this.write(Command.XMIT_STAT);
-    this._status.lastUpdated = then;
-    setTimeout(() => {
-      this.log.debug('Status update was requested at %s, last update was at %s.', then, this._status.lastUpdated);
-      if (then === this._status.lastUpdated) {
-        this.log.debug('Device seems to be offline, setting _status.isOn to false.');
-        this._status.isOn = false;
-      }
-    }, Device.STATUS_TIMEOUT);
   }
 
   private async startVolumeChange() {

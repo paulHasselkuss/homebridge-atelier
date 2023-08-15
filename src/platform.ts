@@ -91,7 +91,7 @@ export class AtelierPlatform implements DynamicPlatformPlugin {
         accessory.context.name = displayName;
         accessory.context.path = path;
 
-        accessory.category = 34; //34 = audio receiver
+        accessory.category = this.api.hap.Categories.AUDIO_RECEIVER;
 
         // create the accessory handler for the newly create accessory
         // this is imported from `platformAccessory.ts`

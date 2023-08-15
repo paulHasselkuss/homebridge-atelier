@@ -54,6 +54,7 @@ export class AtelierPlatform implements DynamicPlatformPlugin {
     for (const device of this.config.devices) {
       const displayName = device.name;
       const path = device.path;
+      const maxVolume = device.maxVolume;
 
       // generate a unique id for the accessory this should be generated from
       // something globally unique, but constant, for example, the device serial
@@ -90,6 +91,7 @@ export class AtelierPlatform implements DynamicPlatformPlugin {
         // the `context` property can be used to store any data about the accessory you may need
         accessory.context.name = displayName;
         accessory.context.path = path;
+        accessory.context.maxVolume = maxVolume;
 
         accessory.category = this.api.hap.Categories.AUDIO_RECEIVER;
 

@@ -2,7 +2,6 @@
   "pluginAlias": "AtelierRs232HomebridgePlugin",
   "pluginType": "platform",
   "singular": true,
-  "footerDisplay": "The device running HomeBridge must be connected to the receiver. The connection must be accessible under the given path and writable for the user running HomeBridge.",
   "schema": {
     "name": {
       "title": "Name",
@@ -24,7 +23,17 @@
             "title": "RS232 Path",
             "type": "string",
             "placeholder": "/dev/ttyUSB0",
-            "required": true
+            "required": true,
+            "description": "The path to the serial port that is connected to the Atelier device."
+          },
+          "maxVolume": {
+            "title": "Maximum Volume",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 60,
+            "required": true,
+            "description": "The maximum volume to use with the Atelier device. The volume set via HomeKit will be a percentage of the maximum volume given here. For example, for a maximum volume of 60, a setting of 50 in Homekit will set the Atelier device to a volume of 30."
           }
         }
       }
@@ -38,7 +47,8 @@
       "buttonText": "Add Atelier Device",
       "items": [
         "devices[].name",
-        "devices[].path"
+        "devices[].path",
+        "devices[].maxVolume"
       ]
     }
   ]

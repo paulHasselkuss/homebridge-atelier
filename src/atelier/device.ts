@@ -9,7 +9,6 @@ export class Device {
   private static STAT_DELIMITER = '\r\n';
   private static STATUS_TIMEOUT = 3 * 1000;
   private static STATUS_UPDATE_THRESHOLD = 60 * 1000;
-  private static MAX_VOLUME = 60;
 
   private readonly _port: SerialPort;
   private readonly _status: DeviceStatus;
@@ -19,6 +18,7 @@ export class Device {
 
   constructor(
     pathToDevice: string,
+    private readonly maxVolume: number,
     private readonly log: Logger,
   ) {
 
@@ -57,16 +57,20 @@ export class Device {
     }
   }
 
-  volume(value: number) {
-    if (value < 0) {
+  volume(percentage: number) {
+    if (percentage < 0) {
       this.log.warn('Cannot set the volume >0!');
-      value = 0;
+      percentage = 0;
     }
-    if (value > Device.MAX_VOLUME) {
-      this.log.debug('A volume of %s is above the maximum of %s. Using the maximum instead.', value, Device.MAX_VOLUME);
-      value = Device.MAX_VOLUME;
+    if (percentage > 100) {
+      this.log.warn('Cannot set the volume <100!');
+      percentage = 100;
+
     }
-    this._changeVolumeTo = value;
+    const realVolume = Math.round(this.maxVolume / 100 * percentage);
+    this.log.debug('Setting volume to %s (%s% of the maximum volume %s).', realVolume, percentage, this.maxVolume);
+
+    this._changeVolumeTo = realVolume;
     if (!this._isVolumeChangeRunning) {
       this._isVolumeChangeRunning = true;
       this.startVolumeChange().then(()=>this._isVolumeChangeRunning=false);

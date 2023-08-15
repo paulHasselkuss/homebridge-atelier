@@ -55,7 +55,7 @@ export class AtelierAccessory {
       .onSet(this.handleTargetMediaStateSet.bind(this));
 
     //device
-    this.device = new Device(accessory.context.path, this.log);
+    this.device = new Device(accessory.context.path, accessory.context.maxVolume, this.log);
     const status = this.device.status();
     status.on('isOn', this.handleOnUpdate.bind(this))
       .on('isMute', this.handleMuteUpdate.bind(this))

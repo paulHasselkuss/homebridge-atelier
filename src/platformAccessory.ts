@@ -92,7 +92,6 @@ export class AtelierAccessory {
   handleOnUpdate(value) {
     this.log.debug('Triggered UPDATE On');
     this.switchService.updateCharacteristic(this.platform.Characteristic.On, value);
-    this.speakerService.updateCharacteristic(this.platform.Characteristic.Active, value);
   }
 
   async handleOnSet(value) {

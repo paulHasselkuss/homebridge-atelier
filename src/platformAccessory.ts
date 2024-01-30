@@ -22,8 +22,7 @@ export class AtelierAccessory {
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Braun')
-      .setCharacteristic(this.platform.Characteristic.Model, accessory.context.name)
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, 'n/a');
+      .setCharacteristic(this.platform.Characteristic.Model, accessory.context.name);
 
     // speaker
     this.speakerService = this.getOrCreateService(this.platform.Service.SmartSpeaker);
@@ -52,8 +51,12 @@ export class AtelierAccessory {
     this.fanService = this.getOrCreateService(this.platform.Service.Fan);
     this.fanService.setCharacteristic(this.platform.Characteristic.Name, accessory.context.name);
     this.fanService.getCharacteristic(this.platform.Characteristic.On)
-      .onGet(this.handleMuteGetInverted.bind(this))
-      .onSet(this.handleMuteSetInverted.bind(this));
+      .onGet(async () => {
+        return !await this.handleOnGet();
+      })
+      .onSet(async (value) => {
+        await this.handleOnSet(!value);
+      });
     this.fanService.addCharacteristic(this.platform.Characteristic.RotationSpeed)
       .onGet(this.handleVolumeGet.bind(this))
       .onSet(this.handleVolumeSet.bind(this));
@@ -89,14 +92,16 @@ export class AtelierAccessory {
     return this.device.status().isOn;
   }
 
-  handleOnUpdate(value) {
-    this.log.debug('Triggered UPDATE On');
-    this.switchService.updateCharacteristic(this.platform.Characteristic.On, value);
-  }
-
   async handleOnSet(value) {
     this.log.debug('Triggered SET On:', value);
     this.device.isOn(value);
+  }
+
+  handleOnUpdate(value) {
+    this.log.debug('Triggered UPDATE On');
+    this.switchService.updateCharacteristic(this.platform.Characteristic.On, value);
+    this.speakerService.updateCharacteristic(this.platform.Characteristic.CurrentMediaState,
+      value ? this.platform.Characteristic.CurrentMediaState.PLAY : this.platform.Characteristic.CurrentMediaState.STOP);
   }
 
   async handleMuteGet() {
@@ -104,9 +109,9 @@ export class AtelierAccessory {
     return this.device.status().isMute;
   }
 
-  async handleMuteGetInverted() {
-    this.log.debug('Triggered GET Mute Inverted');
-    return !this.device.status().isMute;
+  async handleMuteSet(value) {
+    this.log.debug('Triggered SET Mute:', value);
+    this.device.isMute(value);
   }
 
   handleMuteUpdate(value) {
@@ -115,38 +120,34 @@ export class AtelierAccessory {
     this.fanService.updateCharacteristic(this.platform.Characteristic.On, !value);
   }
 
-  async handleMuteSet(value) {
-    this.log.debug('Triggered SET Mute:', value);
-    this.device.isMute(value);
-  }
-
-  async handleMuteSetInverted(value) {
-    this.log.debug('Triggered SET Mute Inverted:', value);
-    this.device.isMute(!value);
-  }
-
   async handleVolumeGet() {
     this.log.debug('Triggered GET Volume');
     const volume = this.device.status().volume;
-    const percent = Math.round(volume / this.maxVolume * 100);
-    return percent;
-  }
-
-  handleVolumeUpdate(value) {
-    this.log.debug('Triggered UPDATE Volume');
-    const percent = Math.round(value / this.maxVolume * 100);
-    this.speakerService.updateCharacteristic(this.platform.Characteristic.Volume, percent);
-    this.fanService.updateCharacteristic(this.platform.Characteristic.RotationSpeed, percent);
+    return this.toPercent(volume);
   }
 
   async handleVolumeSet(value) {
     this.log.debug('Triggered SET Volume:', value);
-    const volume = Math.round(this.maxVolume / 100 * value);
-    this.device.volume(volume);
+    this.device.volume(this.toAbsolute(value));
+  }
+
+  handleVolumeUpdate(value) {
+    this.log.debug('Triggered UPDATE Volume');
+    const percent = this.toPercent(value);
+    this.speakerService.updateCharacteristic(this.platform.Characteristic.Volume, percent);
+    this.fanService.updateCharacteristic(this.platform.Characteristic.RotationSpeed, percent);
   }
 
   private getOrCreateService(service) {
     return this.accessory.getService(service) || this.accessory.addService(service);
+  }
+
+  private toPercent(input: number) {
+    return Math.round(input / this.maxVolume * 100);
+  }
+
+  private toAbsolute(percent) {
+    return Math.round(this.maxVolume / 100 * percent);
   }
 
 }

@@ -1,7 +1,7 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
 import { PLUGIN_NAME } from './settings';
-import { AtelierAccessory } from './platformAccessory';
+import { AtelierAccessory } from './atelierAccessory';
 
 /**
  * AtelierPlatform
@@ -13,7 +13,6 @@ export class AtelierPlatform implements DynamicPlatformPlugin {
 
   // used to track restored cached accessories
   private readonly accessories: PlatformAccessory[] = [];
-  private readonly handlers: AtelierAccessory[] = [];
 
   constructor(
     public readonly log: Logger,
@@ -46,6 +45,7 @@ export class AtelierPlatform implements DynamicPlatformPlugin {
 
     for (const device of this.config.devices) {
       const name = device.name;
+      const model = device.model || name;
       const path = device.path;
       const maxVolume = device.maxVolume;
 
@@ -62,6 +62,7 @@ export class AtelierPlatform implements DynamicPlatformPlugin {
         accessory.category = this.api.hap.Categories.AUDIO_RECEIVER;
         accessory.context = {
           name,
+          model,
           path,
           maxVolume,
         };

@@ -16,8 +16,13 @@
           "name": {
             "title": "Name",
             "type": "string",
-            "placeholder": "Atelier R4",
+            "placeholder": "Atelier Receiver",
             "required": true
+          },
+          "model": {
+            "title": "Model",
+            "type": "string",
+            "placeholder": "Atelier R4"
           },
           "path": {
             "title": "RS232 Path",
@@ -47,6 +52,7 @@
       "buttonText": "Add Atelier Device",
       "items": [
         "devices[].name",
+        "devices[].model",
         "devices[].path",
         "devices[].maxVolume"
       ]

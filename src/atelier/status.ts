@@ -1,6 +1,6 @@
 import EventEmitter from 'events';
 
-export class DeviceStatus extends EventEmitter {
+export class Status extends EventEmitter {
 
   private static REGEX = new RegExp('^;([0-9]+);\\s*([A-Za-z0-9\\-\\.\\ ]*)');
 
@@ -14,7 +14,7 @@ export class DeviceStatus extends EventEmitter {
   }
 
   static createDummy() {
-    return new DeviceStatus(false, 40, false, 0);
+    return new Status(false, 40, false, 0);
   }
 
   set isOn(value: boolean) {
@@ -48,7 +48,7 @@ export class DeviceStatus extends EventEmitter {
   }
 
   set lastUpdated(value: number) {
-    //this is useful if the update cmd is run, when one waits for reply
+    //this is useful if the update cmd is executed and one waits for a reply
     this._lastUpdated = value;
   }
 
@@ -57,7 +57,7 @@ export class DeviceStatus extends EventEmitter {
   }
 
   updateFromInput(input: string): void {
-    const matches = input.match(DeviceStatus.REGEX);
+    const matches = input.match(Status.REGEX);
 
     if (!matches || !matches[1]) {
       return;

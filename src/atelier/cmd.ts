@@ -6,6 +6,7 @@ export class Cmd {
   static readonly VOLUME_UP = new Cmd('0<3', (s) => s.volume+=1);
   static readonly VOLUME_DOWN = new Cmd('0<4', (s) => s.volume-=1);
   static readonly MUTE = new Cmd('0<5', (s) => s.isMute = !s.isMute);
+  static readonly LOUDNESS = new Cmd('0;>', (s) => s.isLoudness = !s.isLoudness);
   static readonly XMIT_STAT = new Cmd('0:7', (s) => {
     const then = Date.now();
     s.lastUpdated = then;

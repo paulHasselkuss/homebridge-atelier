@@ -11,9 +11,11 @@ export class AtelierAccessory {
 
   private readonly speaker: Service;
   private readonly onOffSwitch: Service;
+  private readonly loudnessSwitch: Service;
   private readonly volumeFan: Service;
   private readonly log: Logger;
   private readonly device: AtelierDevice;
+  private readonly name: string;
   private readonly maxVolume: number;
 
   constructor(
@@ -24,6 +26,7 @@ export class AtelierAccessory {
     this.Service = platform.Service;
     this.log = platform.log;
 
+    this.name = accessory.context.name;
     this.maxVolume = accessory.context.maxVolume;
 
     // accessory information
@@ -45,15 +48,22 @@ export class AtelierAccessory {
       .onGet(this.getIsActive.bind(this))
       .onSet(this.setIsActive.bind(this));
 
-    // switch
-    this.onOffSwitch = this.getOrCreateService(this.Service.Switch);
+    // on/off switch
+    this.onOffSwitch = this.getOrCreateService(this.Service.Switch, `${this.name}_power`, `Power (${this.name})`);
     this.onOffSwitch.getCharacteristic(this.Characteristic.On)
       .onGet(this.getIsOn.bind(this))
       .onSet(this.setIsOn.bind(this));
     this.speaker.addLinkedService(this.onOffSwitch);
 
+    // loudness switch
+    this.loudnessSwitch = this.getOrCreateService(this.Service.Switch, `${this.name}_loudness`, `Loudness (${this.name})`);
+    this.loudnessSwitch.getCharacteristic(this.Characteristic.On)
+      .onGet(this.getIsLoudness.bind(this))
+      .onSet(this.setIsLoudness.bind(this));
+    this.speaker.addLinkedService(this.loudnessSwitch);
+
     // fan
-    this.volumeFan = this.getOrCreateService(this.Service.Fan);
+    this.volumeFan = this.getOrCreateService(this.Service.Fan, `${this.name}_volume`, `Volume (${this.name})`);
     this.volumeFan.getCharacteristic(this.Characteristic.On)
       .onGet(() => !this.getIsMute()) //inverted
       .onSet((v) => this.setIsMute(!v)); //inverted
@@ -72,6 +82,9 @@ export class AtelierAccessory {
       .on('isMute', () => {
         this.speaker.updateCharacteristic(this.Characteristic.Mute, this.getIsMute());
         this.volumeFan.updateCharacteristic(this.Characteristic.On, !this.getIsMute()); //inverted
+      })
+      .on('isLoudness', () => {
+        this.loudnessSwitch.updateCharacteristic(this.Characteristic.On, this.getIsLoudness());
       })
       .on('volume', () => {
         this.speaker.updateCharacteristic(this.Characteristic.Volume, this.getVolume());
@@ -102,6 +115,16 @@ export class AtelierAccessory {
     this.setIsOn(value === this.Characteristic.CurrentMediaState.PLAY);
   }
 
+  getIsLoudness() {
+    return this.device.status().isLoudness;
+  }
+
+  setIsLoudness(value) {
+    if (this.getIsLoudness() !== value) {
+      this.device.enqueue(Cmd.LOUDNESS);
+    }
+  }
+
   getIsMute() {
     return this.device.status().isMute;
   }
@@ -126,8 +149,8 @@ export class AtelierAccessory {
     this.device.volumeChange(raw);
   }
 
-  private getOrCreateService(service, name=this.accessory.context.name) {
-    const ret = this.accessory.getService(service) || this.accessory.addService(service);
+  private getOrCreateService(service, uniqueId=service, name=this.name) {
+    const ret = this.accessory.getService(uniqueId) || this.accessory.addService(service, uniqueId, uniqueId);
     return ret.setCharacteristic(this.Characteristic.Name, name);
   }
 

@@ -8,13 +8,14 @@ export class Status extends EventEmitter {
     private _isOn: boolean,
     private _volume: number,
     private _isMute: boolean,
+    private _isLoudness: boolean,
     private _lastUpdated: number,
   ) {
     super();
   }
 
   static createDummy() {
-    return new Status(false, 40, false, 0);
+    return new Status(false, 40, false, false, 0);
   }
 
   set isOn(value: boolean) {
@@ -47,6 +48,16 @@ export class Status extends EventEmitter {
     return this._isMute;
   }
 
+  set isLoudness(value: boolean) {
+    this._isLoudness = value;
+    this._lastUpdated = Date.now();
+    this.emit('isLoudness', value);
+  }
+
+  get isLoudness() {
+    return this._isLoudness;
+  }
+
   set lastUpdated(value: number) {
     //this is useful if the update cmd is executed and one waits for a reply
     this._lastUpdated = value;
@@ -62,14 +73,21 @@ export class Status extends EventEmitter {
     if (!matches || !matches[1]) {
       return;
     }
+
     if (matches[1] === '0') {
       this.isOn = true;
     } else if (matches[1] === '1'){
       this.volume = +matches[2] ;
+    } else if (matches[1] === '5'){
+      this.isLoudness = this.toBoolean(matches[2]);
     } else if (matches[1] === '6'){
-      this.isMute = matches[2].charAt(1) === 'Y';
+      this.isMute = this.toBoolean(matches[2]);
     } else {
       return;
     }
+  }
+
+  private toBoolean(input:string) {
+    return input.charAt(0) === 'Y';
   }
 }

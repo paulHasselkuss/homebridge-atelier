@@ -3,8 +3,18 @@ import {Input, Status} from './status';
 export class Cmd {
 
   static readonly ON_OFF = new Cmd('0<2', (s) => s.isOn = !s.isOn);
-  static readonly VOLUME_UP = new Cmd('0<3', (s) => s.volume+=1);
-  static readonly VOLUME_DOWN = new Cmd('0<4', (s) => s.volume-=1);
+  static readonly VOLUME_UP = new Cmd('0<3', (s) => {
+    if (s.volume < 100) {
+      s.volume+=1;
+    }
+  });
+
+  static readonly VOLUME_DOWN = new Cmd('0<4', (s) => {
+    if (s.volume > 0){
+      s.volume-=1;
+    }
+  });
+
   static readonly MUTE = new Cmd('0<5', (s) => s.isMute = !s.isMute);
   static readonly LOUDNESS = new Cmd('0;>', (s) => s.isLoudness = !s.isLoudness);
   static readonly INPUT_AM = new Cmd('0<9', (s) => s.inputSource = Input.AM);

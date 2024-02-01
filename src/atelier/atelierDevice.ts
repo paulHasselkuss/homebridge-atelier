@@ -14,6 +14,7 @@ export class AtelierDevice {
   private readonly _port: SerialPort | SerialPortMock;
   private readonly _status: Status;
 
+  private targetVolume = -1;
   private isProcessing = false;
   private queue: (() => void)[] = [];
 
@@ -61,21 +62,29 @@ export class AtelierDevice {
     this.processQueue();
   }
 
-  volumeChange(target: number) {
-    assert(target >= 0 && target <= 100, 'Volume target must be between 0 and 100.');
-    this.log.debug('Starting to change volume to %s', target);
+  volumeChange(givenTarget: number) {
+    assert(givenTarget >= 0 && givenTarget <= 100, 'Volume target must be between 0 and 100.');
+
+    if (this.targetVolume !== -1) {
+      this.log.debug('Volume change already in progress, updating target from %s to %s', this.targetVolume, givenTarget);
+      this.targetVolume = givenTarget;
+      return;
+    }
+    this.log.debug('Starting to change volume to %s', this.targetVolume);
+    this.targetVolume = givenTarget;
 
     const repeatingTask = () => {
       this.log.debug('Current volume: ', this._status.volume);
 
-      if (this._status.volume !== target){
+      if (this._status.volume !== this.targetVolume){
         const current = this._status.volume;
-        const cmd = current < target ? Cmd.VOLUME_UP : Cmd.VOLUME_DOWN;
+        const cmd = current < this.targetVolume ? Cmd.VOLUME_UP : Cmd.VOLUME_DOWN;
         this.write(cmd, this._status);
 
         setTimeout(repeatingTask, AtelierDevice.CMD_DELAY);
       } else {
-        this.log.debug('Volume change to %s finished.', target);
+        this.log.debug('Volume change to %s finished.', this.targetVolume);
+        this.targetVolume = -1;
         this.isProcessing = false;
         this.processQueue();
       }

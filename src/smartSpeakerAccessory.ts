@@ -4,7 +4,11 @@ import {AtelierPlatform} from './atelierPlatform';
 import {AtelierDevice} from './atelier/atelierDevice';
 import {Cmd} from './atelier/cmd';
 
-export class AtelierAccessory {
+/**
+ * Uses a [SmartSpeaker](https://developers.homebridge.io/#/service/SmartSpeaker) to interact with the device.
+ * Input selection and remote keys are not supported.
+ */
+export class SmartSpeakerAccessory {
 
   private readonly Characteristic: typeof Characteristic;
   private readonly Service: typeof Service;

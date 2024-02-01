@@ -97,7 +97,8 @@ The response consists of multiple lines. Information about the different statuse
 | Speaker 2         | `9`  | `;9;N <CR> <LF>`     |
 | Station Frequency | `10` | `;10;89.7 <CR> <LF>` |
 
-Numerical values correspond to the numbers displayed by the device. `Y` and `N` indicate active and inactive.
+In general, values correspond to what is displayed by the device, while `Y` and `N` indicate active and inactive.
+Possible values for `Listen source` are `TV`, `CD`, `PH`, `T1`, `T2`, `AM`, `FM`.
 
 ## CD Player
 

@@ -1,7 +1,7 @@
-import { API } from 'homebridge';
+import {API} from 'homebridge';
 
-import { PLATFORM_NAME } from './settings';
-import { AtelierPlatform } from './atelierPlatform';
+import {PLATFORM_NAME} from './settings';
+import {AtelierPlatform} from './atelierPlatform';
 
 /**
  * Registers the platform with Homebridge.

@@ -1,5 +1,15 @@
 import EventEmitter from 'events';
 
+export const enum Input {
+  AM = 'AM',
+  FM = 'FM',
+  CD = 'CD',
+  Tape1 = 'T1',
+  Tape2 = 'T2',
+  Phono = 'PH',
+  TV = 'TV'
+}
+
 export class Status extends EventEmitter {
 
   private static REGEX = new RegExp('^;([0-9]+);\\s*([A-Za-z0-9\\-\\.\\ ]*)');
@@ -9,13 +19,14 @@ export class Status extends EventEmitter {
     private _volume: number,
     private _isMute: boolean,
     private _isLoudness: boolean,
+    private _inputSource: Input,
     private _lastUpdated: number,
   ) {
     super();
   }
 
   static createDummy() {
-    return new Status(false, 40, false, false, 0);
+    return new Status(false, 40, false, false, Input.TV, 0);
   }
 
   set isOn(value: boolean) {
@@ -58,6 +69,16 @@ export class Status extends EventEmitter {
     return this._isLoudness;
   }
 
+  set inputSource(value: Input) {
+    this._inputSource = value;
+    this._lastUpdated = Date.now();
+    this.emit('inputSource', value);
+  }
+
+  get inputSource() {
+    return this._inputSource;
+  }
+
   set lastUpdated(value: number) {
     //this is useful if the update cmd is executed and one waits for a reply
     this._lastUpdated = value;
@@ -82,6 +103,8 @@ export class Status extends EventEmitter {
       this.isLoudness = this.toBoolean(matches[2]);
     } else if (matches[1] === '6'){
       this.isMute = this.toBoolean(matches[2]);
+    } else if (matches[1] === '7'){
+      this.inputSource = <Input>matches[2];
     } else {
       return;
     }

@@ -1,5 +1,5 @@
 import {Logger} from 'homebridge';
-import {ReadlineParser, SerialPort} from 'serialport';
+import {ReadlineParser, SerialPort, SerialPortMock} from 'serialport';
 import {Cmd} from './cmd';
 import {Status} from './status';
 import assert from 'node:assert';
@@ -11,16 +11,26 @@ export class AtelierDevice {
   private static STATUS_UPDATE_THRESHOLD = 60 * 1000;
   private static CMD_DELAY = 0.5 * 1000;
 
-  private readonly _port: SerialPort;
+  private readonly _port: SerialPort | SerialPortMock;
   private readonly _status: Status;
 
   private isProcessing = false;
   private queue: (() => void)[] = [];
 
+  private lastCmd: Cmd | undefined = undefined;
+  private lastExec = -1;
+
   constructor(
     pathToDevice: string,
     private readonly log: Logger,
   ) {
+
+    //// for testing
+    //SerialPortMock.binding.createPort(pathToDevice);
+    //this._port = new SerialPortMock({
+    //  path: pathToDevice,
+    //  baudRate: AtelierDevice.BAUD_RATE,
+    //});
 
     this._port = new SerialPort({
       path: pathToDevice,
@@ -44,27 +54,24 @@ export class AtelierDevice {
     });
   }
 
-  enqueue(cmd: Cmd, status: Status = this._status) {
+  enqueue(cmd: Cmd) {
     this.queue.push(() => {
-      this.write(cmd, status);
+      this.write(cmd, this._status);
     });
     this.processQueue();
   }
 
-  volumeChange(target: number, status: Status = this._status) {
+  volumeChange(target: number) {
     assert(target >= 0 && target <= 100, 'Volume target must be between 0 and 100.');
     this.log.debug('Starting to change volume to %s', target);
 
-    //get the display to change
-    this.enqueue(Cmd.VOLUME_UP, Status.createDummy());
-
     const repeatingTask = () => {
-      this.log.debug('Current volume: ', status.volume);
+      this.log.debug('Current volume: ', this._status.volume);
 
-      if (status.volume !== target){
-        const current = status.volume;
+      if (this._status.volume !== target){
+        const current = this._status.volume;
         const cmd = current < target ? Cmd.VOLUME_UP : Cmd.VOLUME_DOWN;
-        this.write(cmd, status);
+        this.write(cmd, this._status);
 
         setTimeout(repeatingTask, AtelierDevice.CMD_DELAY);
       } else {
@@ -115,13 +122,31 @@ export class AtelierDevice {
   }
 
   private write(cmd: Cmd, status: Status) {
-    this._port.write(cmd.toString(), (err) => {
+    this._port.write(cmd.controlSequence, (err) => {
       if (err) {
         return this.log.error('Error while writing command to port: ', err.message);
       }
-      this.log.debug('Command written to port', cmd);
-      cmd.callback(status);
+      this.log.debug('Command written to port', cmd.toString());
+
+      if (this.isVolCmd(cmd) && (!this.isVolCmd(this.lastCmd) || (Date.now() - this.lastExec > 3000))) {
+        // if we run a volume cmd,
+        // AND EITHER
+        //  did not run a volume cmd before,
+        //  OR we did run a volume cmd, but that was longer than 3s before,
+        // SKIP the callback:
+        // the device just switched its display but did not update any values yet
+        this.log.debug('Command callback skipped.');
+      } else {
+        cmd.callback(status);
+      }
+
+      this.lastExec = Date.now();
+      this.lastCmd = cmd;
     });
+  }
+
+  private isVolCmd (cmd:Cmd | undefined) {
+    return cmd === Cmd.VOLUME_DOWN || cmd === Cmd.VOLUME_UP;
   }
 
 }

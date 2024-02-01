@@ -1,10 +1,9 @@
-import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
+import {API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic} from 'homebridge';
 
-import { PLUGIN_NAME } from './settings';
-import { AtelierAccessory } from './atelierAccessory';
+import {PLUGIN_NAME} from './settings';
+import {TvAccessory} from './tvAccessory';
 
 /**
- * AtelierPlatform
  * The main constructor for the plugin. Parses the user config and registers accessories with Homebridge.
  */
 export class AtelierPlatform implements DynamicPlatformPlugin {
@@ -74,7 +73,7 @@ export class AtelierPlatform implements DynamicPlatformPlugin {
       }
 
       // create the accessory handler for the accessory
-      new AtelierAccessory(this, accessory);
+      new TvAccessory(this, accessory);
     }
   }
 }

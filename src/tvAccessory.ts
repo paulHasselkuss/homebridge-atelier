@@ -27,7 +27,6 @@ export class TvAccessory {
 
   private cmdRegister: Map<number, Cmd> = new Map();
   private statusRegister: Map<string, number> = new Map();
-  private playPause = false;
 
   constructor(
     platform: AtelierPlatform,
@@ -161,7 +160,8 @@ export class TvAccessory {
   setRemoteKey(value) {
     switch(value) {
       case this.Characteristic.RemoteKey.ARROW_UP:
-      case this.Characteristic.RemoteKey.ARROW_DOWN: {
+      case this.Characteristic.RemoteKey.ARROW_DOWN:
+      case this.Characteristic.RemoteKey.SELECT: {
         this.log.debug('Unsupported remote key pressed:', value.toString());
         break;
       }
@@ -177,19 +177,17 @@ export class TvAccessory {
         this.device.enqueue(Cmd.FAST_FORWARD);
         break;
       }
-      case this.Characteristic.RemoteKey.SELECT:
       case this.Characteristic.RemoteKey.PLAY_PAUSE: {
-        // guess the state
-        const cmd = this.playPause ? Cmd.START : Cmd.PAUSE;
-        this.device.enqueue(cmd);
-        this.playPause = !this.playPause;
+        this.device.enqueue(Cmd.START);
         break;
       }
-      // both info and back are usable, so one could be mapped to something else
-      case this.Characteristic.RemoteKey.BACK:
       case this.Characteristic.RemoteKey.EXIT: // not present in remote widget as of iOS17
-      case this.Characteristic.RemoteKey.INFORMATION: {
+      case this.Characteristic.RemoteKey.BACK: {
         this.device.enqueue(Cmd.STOP);
+        break;
+      }
+      case this.Characteristic.RemoteKey.INFORMATION: {
+        this.device.enqueue(Cmd.PAUSE);
         break;
       }
     }

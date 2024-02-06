@@ -7,6 +7,8 @@ import {Cmd} from './atelier/cmd';
 /**
  * Uses a [SmartSpeaker](https://developers.homebridge.io/#/service/SmartSpeaker) to interact with the device.
  * Input selection and remote keys are not supported.
+ *
+ * @deprecated Use TVAccessory instead.
  */
 export class SmartSpeakerAccessory {
 

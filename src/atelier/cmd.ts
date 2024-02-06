@@ -24,8 +24,6 @@ export class Cmd {
   static readonly INPUT_TV = new Cmd('0<;', (s) => s.inputSource = Input.TV);
   static readonly INPUT_TAPE_1 = new Cmd('09?', (s) => s.inputSource = Input.Tape1);
   static readonly INPUT_TAPE_2 = new Cmd('09@', (s) => s.inputSource = Input.Tape2);
-  static readonly SPEAKER_1 = new Cmd('0<?', (s) => s.isSpeaker1 = !s.isSpeaker1);
-  static readonly SPEAKER_2 = new Cmd('0<@', (s) => s.isSpeaker2 = !s.isSpeaker2);
   static readonly STOP = new Cmd('0:4');
   static readonly PAUSE = new Cmd('0:5');
   static readonly START = new Cmd('0:6');

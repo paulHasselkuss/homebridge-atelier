@@ -20,15 +20,13 @@ export class Status extends EventEmitter {
     private _isMute: boolean,
     private _isLoudness: boolean,
     private _inputSource: Input,
-    private _isSpeaker1: boolean,
-    private _isSpeaker2: boolean,
     private _lastUpdated: number,
   ) {
     super();
   }
 
   static createDummy() {
-    return new Status(false, 40, false, false, Input.TV, true, false, 0);
+    return new Status(false, 40, false, false, Input.TV, 0);
   }
 
   set isOn(value: boolean) {
@@ -81,26 +79,6 @@ export class Status extends EventEmitter {
     return this._inputSource;
   }
 
-  get isSpeaker1(): boolean {
-    return this._isSpeaker1;
-  }
-
-  set isSpeaker1(value: boolean) {
-    this._isSpeaker1 = value;
-    this._lastUpdated = Date.now();
-    this.emit('isSpeaker1', value);
-  }
-
-  get isSpeaker2(): boolean {
-    return this._isSpeaker2;
-  }
-
-  set isSpeaker2(value: boolean) {
-    this._isSpeaker2 = value;
-    this._lastUpdated = Date.now();
-    this.emit('isSpeaker2', value);
-  }
-
   set lastUpdated(value: number) {
     //this is useful if the update cmd is executed and one waits for a reply
     this._lastUpdated = value;
@@ -127,11 +105,7 @@ export class Status extends EventEmitter {
       this.isMute = this.toBoolean(matches[2]);
     } else if (matches[1] === '7'){
       this.inputSource = <Input>matches[2];
-    } else if (matches[1] === '8') {
-      this.isSpeaker1 = this.toBoolean(matches[2]);
-    } else if (matches[1] === '9') {
-      this.isSpeaker2 = this.toBoolean(matches[2]);
-    }else {
+    } else {
       return;
     }
   }

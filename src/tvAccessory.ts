@@ -139,25 +139,25 @@ export class TvAccessory {
     });
   }
 
-  getIsActive() {
+  private getIsActive() {
     return this.device.status().isOn ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE;
   }
 
-  setIsActive(value) {
+  private setIsActive(value) {
     if (this.getIsActive() !== value) {
       this.device.enqueue(Cmd.ON_OFF);
     }
   }
 
-  getActiveId() {
+  private getActiveId() {
     return this.statusRegister.get(this.device.status().inputSource)!;
   }
 
-  setActiveId(value) {
+  private setActiveId(value) {
     this.device.enqueue(this.cmdRegister.get(value)!);
   }
 
-  setRemoteKey(value) {
+  private setRemoteKey(value) {
     switch(value) {
       case this.Characteristic.RemoteKey.ARROW_UP:
       case this.Characteristic.RemoteKey.ARROW_DOWN:
@@ -193,27 +193,27 @@ export class TvAccessory {
     }
   }
 
-  getIsLoudness() {
+  private getIsLoudness() {
     return this.device.status().isLoudness;
   }
 
-  setIsLoudness(value) {
+  private setIsLoudness(value) {
     if (this.getIsLoudness() !== value) {
       this.device.enqueue(Cmd.LOUDNESS);
     }
   }
 
-  getIsMute() {
+  private getIsMute() {
     return this.device.status().isMute;
   }
 
-  setIsMute(value) {
+  private setIsMute(value) {
     if (this.getIsMute() !== value) {
       this.device.enqueue(Cmd.MUTE);
     }
   }
 
-  getVolume() {
+  private getVolume() {
     const raw = this.device.status().volume;
     const relative = Math.round(raw / this.maxVolume * 100);
     this.log.debug('Got a raw volume of %s from the device, adapting to a relative volume of %s%', raw, relative);
@@ -221,7 +221,7 @@ export class TvAccessory {
     return relative;
   }
 
-  setVolume(relative) {
+  private setVolume(relative) {
     const raw = Math.round(this.maxVolume / 100 * relative);
     this.log.debug('Got a relative volume of %s, adapting to a raw volume of %s', relative, raw);
     this.device.volumeChange(raw);

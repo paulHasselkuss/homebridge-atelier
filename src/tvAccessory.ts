@@ -132,42 +132,42 @@ export class TvAccessory {
 
   private setRemoteKey(value: CharacteristicValue): void {
     switch (value) {
-      case this.Characteristic.RemoteKey.ARROW_UP: {
-        this.device.increaseVolume();
-        break;
-      }
-      case this.Characteristic.RemoteKey.ARROW_DOWN: {
-        this.device.decreaseVolume();
-        break;
-      }
-      case this.Characteristic.RemoteKey.PREVIOUS_TRACK: // not present in remote widget as of iOS17
-      case this.Characteristic.RemoteKey.REWIND: // not present in remote widget as of iOS17
-      case this.Characteristic.RemoteKey.ARROW_LEFT: {
-        this.device.rewind();
-        break;
-      }
-      case this.Characteristic.RemoteKey.NEXT_TRACK: // not present in remote widget as of iOS17
-      case this.Characteristic.RemoteKey.FAST_FORWARD: // not present in remote widget as of iOS17
-      case this.Characteristic.RemoteKey.ARROW_RIGHT: {
-        this.device.fastForward();
-        break;
-      }
-      case this.Characteristic.RemoteKey.PLAY_PAUSE: {
-        this.device.start();
-        break;
-      }
-      case this.Characteristic.RemoteKey.EXIT: // not present in remote widget as of iOS17
-      case this.Characteristic.RemoteKey.BACK: {
-        this.device.stop();
-        break;
-      }
-      case this.Characteristic.RemoteKey.INFORMATION: {
-        this.device.pause();
-        break;
-      }
-      case this.Characteristic.RemoteKey.SELECT:
-      default:
-        this.log.debug('Unsupported remote key pressed:', value.toString());
+    case this.Characteristic.RemoteKey.ARROW_UP: {
+      this.device.increaseVolume();
+      break;
+    }
+    case this.Characteristic.RemoteKey.ARROW_DOWN: {
+      this.device.decreaseVolume();
+      break;
+    }
+    case this.Characteristic.RemoteKey.PREVIOUS_TRACK: // not present in remote widget as of iOS17
+    case this.Characteristic.RemoteKey.REWIND: // not present in remote widget as of iOS17
+    case this.Characteristic.RemoteKey.ARROW_LEFT: {
+      this.device.rewind();
+      break;
+    }
+    case this.Characteristic.RemoteKey.NEXT_TRACK: // not present in remote widget as of iOS17
+    case this.Characteristic.RemoteKey.FAST_FORWARD: // not present in remote widget as of iOS17
+    case this.Characteristic.RemoteKey.ARROW_RIGHT: {
+      this.device.fastForward();
+      break;
+    }
+    case this.Characteristic.RemoteKey.PLAY_PAUSE: {
+      this.device.start();
+      break;
+    }
+    case this.Characteristic.RemoteKey.EXIT: // not present in remote widget as of iOS17
+    case this.Characteristic.RemoteKey.BACK: {
+      this.device.stop();
+      break;
+    }
+    case this.Characteristic.RemoteKey.INFORMATION: {
+      this.device.pause();
+      break;
+    }
+    case this.Characteristic.RemoteKey.SELECT:
+    default:
+      this.log.debug('Unsupported remote key pressed:', value.toString());
     }
   }
 

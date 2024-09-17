@@ -43,17 +43,15 @@ export class Device {
   }
 
   increaseVolume() {
-    const cmd = Cmd.VOLUME_UP;
-    this.cmdHandler.enqueCmd(cmd);
-    if (this.cmdHandler.wasStateUpdated()) {
+    this.cmdHandler.enqueCmd(Cmd.VOLUME_UP);
+    if (this.cmdHandler.wasStateUpdated() && this.state.volume < 100) {
       this.state.volume++;
     }
   }
 
   decreaseVolume() {
-    const cmd = Cmd.VOLUME_DOWN;
-    this.cmdHandler.enqueCmd(cmd);
-    if (this.cmdHandler.wasStateUpdated()) {
+    this.cmdHandler.enqueCmd(Cmd.VOLUME_DOWN);
+    if (this.cmdHandler.wasStateUpdated() && this.state.volume > 0) {
       this.state.volume--;
     }
   }

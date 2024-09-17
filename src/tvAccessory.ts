@@ -1,137 +1,128 @@
-import {Characteristic, Logger, PlatformAccessory, Service} from 'homebridge';
+import { CharacteristicValue, PlatformAccessory, Service, WithUUID } from 'homebridge';
 
-import {AtelierPlatform} from './atelierPlatform';
-import {AtelierDevice} from './atelier/atelierDevice';
-import {Cmd} from './atelier/cmd';
-import {Input} from './atelier/status';
+import { AtelierPlatform } from './atelierPlatform';
+import { Device } from './atelier/device';
+import { BiMap } from 'mnemonist';
+import { Input } from './atelier/input';
 
-/**
- * Uses a [Television](https://developers.homebridge.io/#/service/Television) and a
- * [TelevisionSpeaker](https://developers.homebridge.io/#/service/TelevisionSpeaker) to interact with the device.
- * Supports selecting input and sending remote keys.
- */
 export class TvAccessory {
 
-  private readonly Characteristic: typeof Characteristic;
-  private readonly Service: typeof Service;
-
-  private readonly tv: Service;
-  private readonly speaker: Service;
-  private readonly loudnessSwitch: Service;
-  private readonly volumeFan: Service;
-
-  private readonly log: Logger;
-  private readonly device: AtelierDevice;
+  private readonly main: Service;
+  private readonly device: Device;
   private readonly name: string;
   private readonly maxVolume: number;
-
-  private cmdRegister: Map<number, Cmd> = new Map();
-  private statusRegister: Map<string, number> = new Map();
+  private readonly statusRegister = new BiMap<Input, CharacteristicValue>();
 
   constructor(
     platform: AtelierPlatform,
     private readonly accessory: PlatformAccessory,
+    private readonly log = platform.log,
+    private readonly Characteristic = platform.Characteristic,
+    private readonly Service = platform.Service,
   ) {
-    this.Characteristic = platform.Characteristic;
-    this.Service = platform.Service;
-    this.log = platform.log;
+    this.name = this.accessory.context.name;
+    this.maxVolume = this.accessory.context.maxVolume;
+    this.device = new Device(accessory.context.path, this.log, accessory.context.state);
 
-    this.name = accessory.context.name;
-    this.maxVolume = accessory.context.maxVolume;
-
-    // accessory information
-    this.accessory.getService(this.Service.AccessoryInformation)!
+    // Accessory Information
+    accessory.getService(this.Service.AccessoryInformation)!
       .setCharacteristic(this.Characteristic.Manufacturer, 'Braun AG')
       .setCharacteristic(this.Characteristic.Model, accessory.context.model);
 
     // TV
-    this.tv = this.getOrCreateService(this.Service.Television);
-    this.tv.setCharacteristic(this.Characteristic.ConfiguredName, this.name);
-    this.tv.setCharacteristic(this.Characteristic.SleepDiscoveryMode, this.Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
+    this.main = this.getOrCreateService(this.Service.Television);
+    this.main.setCharacteristic(this.Characteristic.ConfiguredName, this.name);
+    this.main.setCharacteristic(this.Characteristic.SleepDiscoveryMode, this.Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
 
-    // on/off
-    this.tv.getCharacteristic(this.Characteristic.Active)
-      .onSet(this.setIsActive.bind(this))
-      .onGet(this.getIsActive.bind(this));
+    // TV: on/off
+    this.main.getCharacteristic(this.Characteristic.Active)
+      .onGet(() => this.device.getState().isOn)
+      .onSet(v => this.device.tooglePower(v as boolean));
 
-    // inputs
-    this.tv.setCharacteristic(this.Characteristic.ActiveIdentifier, 1);
-    this.tv.getCharacteristic(this.Characteristic.ActiveIdentifier)
-      .onSet(this.setActiveId.bind(this))
-      .onGet(this.getActiveId.bind(this));
+    // TV: inputs
+    this.main.setCharacteristic(this.Characteristic.ActiveIdentifier, 1);
+    this.main.getCharacteristic(this.Characteristic.ActiveIdentifier)
+      .onGet(() => this.statusRegister.get(this.device.getState().inputSource)!)
+      .onSet(v => this.device.setInput(this.statusRegister.inverse.get(v)!));
 
-    // remote control input
-    this.tv.getCharacteristic(this.Characteristic.RemoteKey)
+    // TV: remote control input
+    this.main.getCharacteristic(this.Characteristic.RemoteKey)
       .onSet(this.setRemoteKey.bind(this));
 
-    // inputs
-    this.createInputService(1, 'TV', Cmd.INPUT_TV, Input.TV);
-    this.createInputService(2, 'AM', Cmd.INPUT_AM, Input.AM);
-    this.createInputService(3, 'FM', Cmd.INPUT_FM, Input.FM);
-    this.createInputService(4, 'Tape 1', Cmd.INPUT_TAPE_1, Input.Tape1);
-    this.createInputService(5, 'Tape 2', Cmd.INPUT_TAPE_2, Input.Tape2);
-    this.createInputService(6, 'CD', Cmd.INPUT_CD, Input.CD);
-    this.createInputService(7, 'PHONO', Cmd.INPUT_PHONO, Input.Phono);
+    // TV: inputs
+    this.createInputService(1, 'TV', Input.TV);
+    this.createInputService(2, 'AM', Input.AM);
+    this.createInputService(3, 'FM', Input.FM);
+    this.createInputService(4, 'Tape 1', Input.Tape1);
+    this.createInputService(5, 'Tape 2', Input.Tape2);
+    this.createInputService(6, 'CD', Input.CD);
+    this.createInputService(7, 'PHONO', Input.Phono);
 
-    // tv speaker
-    this.speaker = this.getOrCreateService(this.Service.TelevisionSpeaker);
-    this.speaker.setCharacteristic(this.Characteristic.Name, this.name);
-    this.speaker.setCharacteristic(this.Characteristic.VolumeControlType, this.Characteristic.VolumeControlType.ABSOLUTE);
-    this.speaker.getCharacteristic(this.Characteristic.Active)
-      .onGet(this.getIsActive.bind(this))
-      .onSet(this.setIsActive.bind(this));
-    this.speaker.getCharacteristic(this.Characteristic.Volume)
-      .onSet(this.setVolume.bind(this))
-      .onGet(this.getVolume.bind(this));
-    this.speaker.getCharacteristic(this.Characteristic.VolumeSelector)
-      .onSet((v) => {
-        const cmd = v === this.Characteristic.VolumeSelector.INCREMENT ? Cmd.VOLUME_UP : Cmd.VOLUME_DOWN;
-        this.device.enqueue(cmd);
+    // Speaker
+    const speaker = this.getOrCreateService(this.Service.TelevisionSpeaker);
+    speaker.setCharacteristic(this.Characteristic.Name, this.name);
+    speaker.setCharacteristic(this.Characteristic.VolumeControlType, this.Characteristic.VolumeControlType.ABSOLUTE);
+    speaker.getCharacteristic(this.Characteristic.Active)
+      .onGet(() => this.device.getState().isOn)
+      .onSet(v => this.device.tooglePower(v as boolean));
+    speaker.getCharacteristic(this.Characteristic.Mute)
+      .onGet(() => this.device.getState().isMute)
+      .onSet(v => this.device.toogleMute(v as boolean));
+    speaker.getCharacteristic(this.Characteristic.Volume)
+      .onGet(this.getRelativeVolume.bind(this))
+      .onSet(this.setRelativeVolume.bind(this));
+    speaker.getCharacteristic(this.Characteristic.VolumeSelector)
+      .onSet(v => {
+        if (v === this.Characteristic.VolumeSelector.INCREMENT) {
+          this.device.increaseVolume();
+        } else {
+          this.device.decreaseVolume();
+        }
       });
-    this.speaker.getCharacteristic(this.Characteristic.Mute)
-      .onSet(this.setIsMute.bind(this))
-      .onGet(this.getIsMute.bind(this));
+    this.main.addLinkedService(speaker);
 
     // loudness switch
-    this.loudnessSwitch = this.getOrCreateService(this.Service.Switch, `${this.name}_loudness`);
-    this.loudnessSwitch.setCharacteristic(this.Characteristic.Name, `Loudness (${this.name})`);
-    this.loudnessSwitch.getCharacteristic(this.Characteristic.On)
-      .onGet(this.getIsLoudness.bind(this))
-      .onSet(this.setIsLoudness.bind(this));
-    this.tv.addLinkedService(this.loudnessSwitch);
+    const loudness = this.getOrCreateService(this.Service.Switch, `${this.name}_loudness`);
+    loudness.setCharacteristic(this.Characteristic.Name, `Loudness (${this.name})`);
+    loudness.getCharacteristic(this.Characteristic.On)
+      .onGet(() => this.device.getState().isLoudness)
+      .onSet(v => this.device.toogleLoudness(v as boolean));
+    this.main.addLinkedService(loudness);
 
     // volume fan
-    this.volumeFan = this.getOrCreateService(this.Service.Fan, `${this.name}_volume`);
-    this.volumeFan.setCharacteristic(this.Characteristic.Name, `Volume (${this.name})`);
-    this.volumeFan.getCharacteristic(this.Characteristic.On)
-      .onGet(() => !this.getIsMute()) //inverted
-      .onSet((v) => this.setIsMute(!v)); //inverted
-    this.volumeFan.addCharacteristic(this.Characteristic.RotationSpeed)
-      .onGet(this.getVolume.bind(this))
-      .onSet(this.setVolume.bind(this));
-    this.tv.addLinkedService(this.volumeFan);
+    const vol = this.getOrCreateService(this.Service.Fan, `${this.name}_volume`);
+    vol.setCharacteristic(this.Characteristic.Name, `Volume (${this.name})`);
+    vol.getCharacteristic(this.Characteristic.On)
+      .onGet(() => !this.device.getState().isMute) //inverted
+      .onSet(v => this.device.toogleMute(!v)); //inverted
+    vol.addCharacteristic(this.Characteristic.RotationSpeed)
+      .onGet(this.getRelativeVolume.bind(this))
+      .onSet(this.setRelativeVolume.bind(this));
+    this.main.addLinkedService(vol);
 
-    // device
-    this.device = new AtelierDevice(accessory.context.path, this.log);
-    this.device.status()
-      .on('isOn', () => {
-        this.tv.updateCharacteristic(this.Characteristic.Active, this.getIsActive());
-        this.speaker.updateCharacteristic(this.Characteristic.Active, this.getIsActive());
+    // state updates
+    // this also triggers an update of the state from the device
+    this.device.getState()
+      .on('isOn', (v: boolean) => {
+        this.main.updateCharacteristic(this.Characteristic.Active, v);
+        speaker.updateCharacteristic(this.Characteristic.Active, v);
       })
-      .on('inputSource', () => {
-        this.tv.updateCharacteristic(this.Characteristic.ActiveIdentifier, this.getActiveId());
+      .on('inputSource', (v: Input) => {
+        this.main.updateCharacteristic(this.Characteristic.ActiveIdentifier, this.statusRegister.get(v)!);
       })
-      .on('isMute', () => {
-        this.speaker.updateCharacteristic(this.Characteristic.Mute, this.getIsMute());
-        this.volumeFan.updateCharacteristic(this.Characteristic.On, !this.getIsMute()); //inverted
+      .on('isMute', (v: boolean) => {
+        speaker.updateCharacteristic(this.Characteristic.Mute, v);
+        vol.updateCharacteristic(this.Characteristic.On, !v); //inverted
       })
-      .on('isLoudness', () => {
-        this.loudnessSwitch.updateCharacteristic(this.Characteristic.On, this.getIsLoudness());
+      .on('isLoudness', (v: boolean) => {
+        loudness.updateCharacteristic(this.Characteristic.On, v);
       })
-      .on('volume', () => {
-        this.speaker.updateCharacteristic(this.Characteristic.Volume, this.getVolume());
-        this.volumeFan.updateCharacteristic(this.Characteristic.RotationSpeed, this.getVolume());
+      .on('volume', (v: number) => {
+        speaker.updateCharacteristic(this.Characteristic.Volume, this.getRelativeVolume(v));
+        vol.updateCharacteristic(this.Characteristic.RotationSpeed, this.getRelativeVolume(v));
       });
+    // store the state with the accessory to be restored from cache
+    this.accessory.context.state = this.device.getState();
 
     // shutdown hook
     platform.api.on('shutdown', () => {
@@ -139,109 +130,68 @@ export class TvAccessory {
     });
   }
 
-  private getIsActive() {
-    return this.device.status().isOn ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE;
-  }
-
-  private setIsActive(value) {
-    if (this.getIsActive() !== value) {
-      this.device.enqueue(Cmd.ON_OFF);
-    }
-  }
-
-  private getActiveId() {
-    return this.statusRegister.get(this.device.status().inputSource)!;
-  }
-
-  private setActiveId(value) {
-    this.device.enqueue(this.cmdRegister.get(value)!);
-  }
-
-  private setRemoteKey(value) {
-    switch(value) {
-      case this.Characteristic.RemoteKey.ARROW_UP:
-      case this.Characteristic.RemoteKey.ARROW_DOWN:
-      case this.Characteristic.RemoteKey.SELECT: {
-        this.log.debug('Unsupported remote key pressed:', value.toString());
+  private setRemoteKey(value: CharacteristicValue): void {
+    switch (value) {
+      case this.Characteristic.RemoteKey.ARROW_UP: {
+        this.device.increaseVolume();
+        break;
+      }
+      case this.Characteristic.RemoteKey.ARROW_DOWN: {
+        this.device.decreaseVolume();
         break;
       }
       case this.Characteristic.RemoteKey.PREVIOUS_TRACK: // not present in remote widget as of iOS17
       case this.Characteristic.RemoteKey.REWIND: // not present in remote widget as of iOS17
       case this.Characteristic.RemoteKey.ARROW_LEFT: {
-        this.device.enqueue(Cmd.REWIND);
+        this.device.rewind();
         break;
       }
       case this.Characteristic.RemoteKey.NEXT_TRACK: // not present in remote widget as of iOS17
       case this.Characteristic.RemoteKey.FAST_FORWARD: // not present in remote widget as of iOS17
       case this.Characteristic.RemoteKey.ARROW_RIGHT: {
-        this.device.enqueue(Cmd.FAST_FORWARD);
+        this.device.fastForward();
         break;
       }
       case this.Characteristic.RemoteKey.PLAY_PAUSE: {
-        this.device.enqueue(Cmd.START);
+        this.device.start();
         break;
       }
       case this.Characteristic.RemoteKey.EXIT: // not present in remote widget as of iOS17
       case this.Characteristic.RemoteKey.BACK: {
-        this.device.enqueue(Cmd.STOP);
+        this.device.stop();
         break;
       }
       case this.Characteristic.RemoteKey.INFORMATION: {
-        this.device.enqueue(Cmd.PAUSE);
+        this.device.pause();
         break;
       }
+      case this.Characteristic.RemoteKey.SELECT:
+      default:
+        this.log.debug('Unsupported remote key pressed:', value.toString());
     }
   }
 
-  private getIsLoudness() {
-    return this.device.status().isLoudness;
+  private getRelativeVolume(volume = this.device.getState().volume): number {
+    return Math.round(volume / this.maxVolume * 100);
   }
 
-  private setIsLoudness(value) {
-    if (this.getIsLoudness() !== value) {
-      this.device.enqueue(Cmd.LOUDNESS);
-    }
+  private setRelativeVolume(relative: CharacteristicValue): void {
+    this.device.setVolume(Math.round(this.maxVolume / 100 * (relative as number)));
   }
 
-  private getIsMute() {
-    return this.device.status().isMute;
-  }
-
-  private setIsMute(value) {
-    if (this.getIsMute() !== value) {
-      this.device.enqueue(Cmd.MUTE);
-    }
-  }
-
-  private getVolume() {
-    const raw = this.device.status().volume;
-    const relative = Math.round(raw / this.maxVolume * 100);
-    this.log.debug('Got a raw volume of %s from the device, adapting to a relative volume of %s%', raw, relative);
-
-    return relative;
-  }
-
-  private setVolume(relative) {
-    const raw = Math.round(this.maxVolume / 100 * relative);
-    this.log.debug('Got a relative volume of %s, adapting to a raw volume of %s', relative, raw);
-    this.device.volumeChange(raw);
-  }
-
-  private getOrCreateService(service, uniqueId=service) {
+  private getOrCreateService(service: WithUUID<typeof Service>, uniqueId = service.toString()) {
     return this.accessory.getService(uniqueId) || this.accessory.addService(service, uniqueId, uniqueId);
   }
 
-  private createInputService(id:number, name:string, cmd:Cmd, status:Input) {
-    const input = this.getOrCreateService(this.Service.InputSource, status);
-    input.setCharacteristic(this.Characteristic.Identifier, id)
+  private createInputService(uniqueId: number, name: string, status: Input) {
+    const input = this.getOrCreateService(this.Service.InputSource, name);
+    input.setCharacteristic(this.Characteristic.Identifier, uniqueId)
       .setCharacteristic(this.Characteristic.Name, name)
       .setCharacteristic(this.Characteristic.ConfiguredName, name)
       .setCharacteristic(this.Characteristic.IsConfigured, this.Characteristic.IsConfigured.CONFIGURED)
       .setCharacteristic(this.Characteristic.InputSourceType, this.Characteristic.InputSourceType.OTHER);
-    this.tv.addLinkedService(input);
-
-    this.cmdRegister.set(id, cmd);
-    this.statusRegister.set(status, id);
+    this.statusRegister.set(status, uniqueId);
+    this.main.addLinkedService(input);
   }
 
 }

@@ -1,14 +1,14 @@
-import {API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic} from 'homebridge';
+import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
-import {PLUGIN_NAME} from './settings';
-import {TvAccessory} from './tvAccessory';
+import { PLUGIN_NAME } from './settings';
+import { TvAccessory } from './tvAccessory';
 
 /**
  * The main constructor for the plugin. Parses the user config and registers accessories with Homebridge.
  */
 export class AtelierPlatform implements DynamicPlatformPlugin {
-  public readonly Service: typeof Service = this.api.hap.Service;
-  public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
+  public readonly Service: typeof Service;
+  public readonly Characteristic: typeof Characteristic;
 
   // used to track restored cached accessories
   private readonly accessories: PlatformAccessory[] = [];
@@ -18,6 +18,8 @@ export class AtelierPlatform implements DynamicPlatformPlugin {
     public readonly config: PlatformConfig,
     public readonly api: API,
   ) {
+    this.Service = api.hap.Service;
+    this.Characteristic = api.hap.Characteristic;
 
     // Fired when all cached accessories have been restored. Dynamic Platform plugins should only
     // register new accessories after this event was fired, to ensure they weren't added already.

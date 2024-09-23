@@ -22,21 +22,24 @@ export class Device {
   }
 
   tooglePower(on: boolean) {
-    if (this.state.isOn !== on) {
+    // eslint-disable-next-line eqeqeq
+    if (this.state.isOn != on) {
       this.cmdHandler.enqueCmd(Cmd.ON_OFF);
       this.state.isOn = on;
     }
   }
 
   toogleMute(on: boolean) {
-    if (this.state.isMute !== on) {
+    // eslint-disable-next-line eqeqeq
+    if (this.state.isMute != on) {
       this.cmdHandler.enqueCmd(Cmd.MUTE);
       this.state.isMute = on;
     }
   }
 
   toogleLoudness(on: boolean) {
-    if (this.state.isLoudness !== on) {
+    // eslint-disable-next-line eqeqeq
+    if (this.state.isLoudness != on) {
       this.cmdHandler.enqueCmd(Cmd.LOUDNESS);
       this.state.isLoudness = on;
     }
@@ -58,14 +61,15 @@ export class Device {
 
   setVolume(target: number) {
     assert(target >= 0 && target <= 100, 'Volume target must be between 0 and 100.');
-    if (this.state.volume !== target) {
+    if (this.state.volume != target) {
       this.cmdHandler.enqueueVolChange(target);
       this.state.volume = target;
     }
   }
 
   setInput(to: Input) {
-    if (this.state.inputSource !== to) {
+    // eslint-disable-next-line eqeqeq
+    if (this.state.inputSource != to) {
       this.cmdHandler.enqueCmd(this.toCmd(to));
       this.state.inputSource = to;
     }
@@ -74,6 +78,7 @@ export class Device {
   getState() {
     const diff = Date.now() - this.stateRequested.getTime();
     this.log.debug('Status was last updated %s ms ago (treshold is %s).', diff, Device.STATUS_UPDATE_THRESHOLD);
+    this.log.debug('Current status is: \n', JSON.stringify(this.state, null, 2));
 
     if (diff > Device.STATUS_UPDATE_THRESHOLD && !this.cmdHandler.isEnqueued(Cmd.XMIT_STAT)) {
       this.log.debug('Updating status...');

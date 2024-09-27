@@ -1,9 +1,9 @@
 import { CharacteristicValue, PlatformAccessory, Service, WithUUID } from 'homebridge';
 
-import { AtelierPlatform } from './atelierPlatform';
-import { Device } from './atelier/device';
 import { BiMap } from 'mnemonist';
+import { Device } from './atelier/device';
 import { Input } from './atelier/input';
+import { AtelierPlatform } from './atelierPlatform';
 
 export class TvAccessory {
 
@@ -37,7 +37,7 @@ export class TvAccessory {
     // TV: on/off
     this.main.getCharacteristic(this.Characteristic.Active)
       .onGet(() => this.device.getState().isOn)
-      .onSet(v => this.device.tooglePower(v as boolean));
+      .onSet(v => this.device.tooglePower(this.toBoolean(v)));
 
     // TV: inputs
     this.main.setCharacteristic(this.Characteristic.ActiveIdentifier, 1);
@@ -64,10 +64,10 @@ export class TvAccessory {
     speaker.setCharacteristic(this.Characteristic.VolumeControlType, this.Characteristic.VolumeControlType.ABSOLUTE);
     speaker.getCharacteristic(this.Characteristic.Active)
       .onGet(() => this.device.getState().isOn)
-      .onSet(v => this.device.tooglePower(v as boolean));
+      .onSet(v => this.device.tooglePower(this.toBoolean(v)));
     speaker.getCharacteristic(this.Characteristic.Mute)
       .onGet(() => this.device.getState().isMute)
-      .onSet(v => this.device.toogleMute(v as boolean));
+      .onSet(v => this.device.toogleMute(this.toBoolean(v)));
     speaker.getCharacteristic(this.Characteristic.Volume)
       .onGet(this.getRelativeVolume.bind(this))
       .onSet(this.setRelativeVolume.bind(this));
@@ -86,7 +86,7 @@ export class TvAccessory {
     loudness.setCharacteristic(this.Characteristic.Name, `Loudness (${this.name})`);
     loudness.getCharacteristic(this.Characteristic.On)
       .onGet(() => this.device.getState().isLoudness)
-      .onSet(v => this.device.toogleLoudness(v as boolean));
+      .onSet(v => this.device.toogleLoudness(this.toBoolean(v)));
     this.main.addLinkedService(loudness);
 
     // volume fan
@@ -192,6 +192,19 @@ export class TvAccessory {
       .setCharacteristic(this.Characteristic.InputSourceType, this.Characteristic.InputSourceType.OTHER);
     this.statusRegister.set(status, uniqueId);
     this.main.addLinkedService(input);
+  }
+
+  private toBoolean(v: CharacteristicValue) {
+    if (typeof v === 'boolean') {
+      return v;
+    }
+    if (typeof v === 'number') {
+      return v !== 0;
+    }
+    if (typeof v === 'string') {
+      return v.toLowerCase() === 'true';
+    }
+    return false;  // Default to false for unknown types
   }
 
 }

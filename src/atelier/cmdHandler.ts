@@ -1,8 +1,8 @@
+import { Logger } from 'homebridge';
+import { CircularBuffer, Queue } from 'mnemonist';
 import { ReadlineParser, SerialPort, SerialPortMock } from 'serialport';
 import { Cmd } from './cmd';
-import { Logger } from 'homebridge';
 import { DeviceState } from './deviceState';
-import { CircularBuffer, Queue } from 'mnemonist';
 
 export class CmdHandler {
 

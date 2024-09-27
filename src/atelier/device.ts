@@ -1,9 +1,9 @@
+import assert from 'assert';
 import { Logger } from 'homebridge';
+import { Cmd } from './cmd';
 import { CmdHandler } from './cmdHandler';
 import { DeviceState } from './deviceState';
-import { Cmd } from './cmd';
 import { Input } from './input';
-import assert from 'assert';
 
 export class Device {
 
@@ -22,24 +22,21 @@ export class Device {
   }
 
   tooglePower(on: boolean) {
-    // eslint-disable-next-line eqeqeq
-    if (this.state.isOn != on) {
+    if (this.state.isOn !== on) {
       this.cmdHandler.enqueCmd(Cmd.ON_OFF);
       this.state.isOn = on;
     }
   }
 
   toogleMute(on: boolean) {
-    // eslint-disable-next-line eqeqeq
-    if (this.state.isMute != on) {
+    if (this.state.isMute !== on) {
       this.cmdHandler.enqueCmd(Cmd.MUTE);
       this.state.isMute = on;
     }
   }
 
   toogleLoudness(on: boolean) {
-    // eslint-disable-next-line eqeqeq
-    if (this.state.isLoudness != on) {
+    if (this.state.isLoudness !== on) {
       this.cmdHandler.enqueCmd(Cmd.LOUDNESS);
       this.state.isLoudness = on;
     }
@@ -61,15 +58,14 @@ export class Device {
 
   setVolume(target: number) {
     assert(target >= 0 && target <= 100, 'Volume target must be between 0 and 100.');
-    if (this.state.volume != target) {
+    if (this.state.volume !== target) {
       this.cmdHandler.enqueueVolChange(target);
       this.state.volume = target;
     }
   }
 
   setInput(to: Input) {
-    // eslint-disable-next-line eqeqeq
-    if (this.state.inputSource != to) {
+    if (this.state.inputSource !== to) {
       this.cmdHandler.enqueCmd(this.toCmd(to));
       this.state.inputSource = to;
     }

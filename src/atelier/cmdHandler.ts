@@ -46,11 +46,11 @@ export class CmdHandler {
     });
   }
 
-  enqueCmd(cmd: Cmd): void {
+  enqueCmd(cmd: Cmd, callback: () => void = () => { }): void {
     this.log.debug('Cmd enqueued ', cmd);
     this.queue.enqueue({
       cmd: cmd,
-      func: () => this.write(cmd),
+      func: () => this.write(cmd, callback),
     });
     this.processQueue();
   }
@@ -105,8 +105,7 @@ export class CmdHandler {
 
       if (current !== this.targetVolume) {
         const cmd = current < this.targetVolume ? up : down;
-        this.write(cmd);
-        cmd === up ? current++ : current--;
+        this.write(cmd, () => cmd === up ? current++ : current--);
         setTimeout(repeatingTask, CmdHandler.CMD_DELAY);
       } else {
         this.log.debug('Volume change to %s finished.', this.targetVolume);
@@ -126,7 +125,7 @@ export class CmdHandler {
     }
   }
 
-  private write(cmd: Cmd): void {
+  private write(cmd: Cmd, callback: () => void): void {
     this.port.write(cmd, err => {
       if (err) {
         return this.log.error('Error while writing command to port: ', err.message);
@@ -137,6 +136,8 @@ export class CmdHandler {
         cmd: cmd,
         timestamp: new Date(),
       });
+
+      callback();
 
       // Set to offline if we do not receive a reponse
       if (cmd === Cmd.XMIT_STAT) {

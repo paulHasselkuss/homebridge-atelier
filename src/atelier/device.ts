@@ -23,37 +23,36 @@ export class Device {
 
   tooglePower(on: boolean) {
     if (this.state.isOn !== on) {
-      this.cmdHandler.enqueCmd(Cmd.ON_OFF);
-      this.state.isOn = on;
+      this.cmdHandler.enqueCmd(Cmd.ON_OFF, () => this.state.isOn = on);
     }
   }
 
   toogleMute(on: boolean) {
     if (this.state.isMute !== on) {
-      this.cmdHandler.enqueCmd(Cmd.MUTE);
-      this.state.isMute = on;
+      this.cmdHandler.enqueCmd(Cmd.MUTE, () => this.state.isMute = on);
     }
   }
 
   toogleLoudness(on: boolean) {
     if (this.state.isLoudness !== on) {
-      this.cmdHandler.enqueCmd(Cmd.LOUDNESS);
-      this.state.isLoudness = on;
+      this.cmdHandler.enqueCmd(Cmd.LOUDNESS, () => this.state.isLoudness = on);
     }
   }
 
   increaseVolume() {
-    this.cmdHandler.enqueCmd(Cmd.VOLUME_UP);
-    if (this.cmdHandler.wasStateUpdated() && this.state.volume < 100) {
-      this.state.volume++;
-    }
+    this.cmdHandler.enqueCmd(Cmd.VOLUME_UP, () => {
+      if (this.cmdHandler.wasStateUpdated() && this.state.volume < 100) {
+        this.state.volume++;
+      }
+    });
   }
 
   decreaseVolume() {
-    this.cmdHandler.enqueCmd(Cmd.VOLUME_DOWN);
-    if (this.cmdHandler.wasStateUpdated() && this.state.volume > 0) {
-      this.state.volume--;
-    }
+    this.cmdHandler.enqueCmd(Cmd.VOLUME_DOWN, () => {
+      if (this.cmdHandler.wasStateUpdated() && this.state.volume > 0) {
+        this.state.volume--;
+      }
+    });
   }
 
   setVolume(target: number) {
@@ -66,8 +65,7 @@ export class Device {
 
   setInput(to: Input) {
     if (this.state.inputSource !== to) {
-      this.cmdHandler.enqueCmd(this.toCmd(to));
-      this.state.inputSource = to;
+      this.cmdHandler.enqueCmd(this.toCmd(to), () => this.state.inputSource = to);
     }
   }
 

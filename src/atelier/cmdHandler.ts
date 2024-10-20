@@ -9,7 +9,7 @@ export class CmdHandler {
   private static BAUD_RATE = 300;
   private static STAT_DELIMITER = '\r\n';
   private static CMD_DELAY = 500;
-  private static XSTAT_DELAY = 2000;
+  private static XSTAT_DELAY = 3000;
   private static STATE_DELAY = 3000;
 
   private readonly port: SerialPort | SerialPortMock;
@@ -145,7 +145,7 @@ export class CmdHandler {
           if (then === this.state.timestamp) {
             this.state.isOn = false;
           }
-        }, CmdHandler.XSTAT_DELAY);
+        }, 500);
       }
 
       // Continue processing the queue after the delay

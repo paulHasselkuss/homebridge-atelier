@@ -146,7 +146,10 @@ export class CmdHandler {
           if (then === this.state.timestamp) {
             this.state.isOn = false;
           }
+          callback();
         }, 500);
+      } else {
+        callback();
       }
 
       // Continue processing the queue after the delay

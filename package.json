@@ -1,5 +1,4 @@
 {
-  "private": true,
   "displayName": "Homebridge Atelier (RS232)",
   "name": "homebridge-atelier-rs232",
   "version": "1.0.0",

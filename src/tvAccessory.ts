@@ -1,9 +1,9 @@
-import { CharacteristicValue, PlatformAccessory, Service, WithUUID } from 'homebridge';
+import { CharacteristicValue, PlatformAccessory, Service, WithUUID } from "homebridge";
 
-import { BiMap } from 'mnemonist';
-import { Device } from './atelier/device';
-import { Input } from './atelier/input';
-import { AtelierPlatform } from './atelierPlatform';
+import { BiMap } from "mnemonist";
+import { Device } from "./atelier/device";
+import { Input } from "./atelier/input";
+import { AtelierPlatform } from "./atelierPlatform";
 
 export class TvAccessory {
 
@@ -26,7 +26,7 @@ export class TvAccessory {
 
     // Accessory Information
     accessory.getService(this.Service.AccessoryInformation)!
-      .setCharacteristic(this.Characteristic.Manufacturer, 'Braun AG')
+      .setCharacteristic(this.Characteristic.Manufacturer, "Braun AG")
       .setCharacteristic(this.Characteristic.Model, accessory.context.model);
 
     // TV
@@ -50,13 +50,13 @@ export class TvAccessory {
       .onSet(this.setRemoteKey.bind(this));
 
     // TV: inputs
-    this.createInputService(1, 'TV', Input.TV);
-    this.createInputService(2, 'AM', Input.AM);
-    this.createInputService(3, 'FM', Input.FM);
-    this.createInputService(4, 'Tape 1', Input.Tape1);
-    this.createInputService(5, 'Tape 2', Input.Tape2);
-    this.createInputService(6, 'CD', Input.CD);
-    this.createInputService(7, 'PHONO', Input.Phono);
+    this.createInputService(1, "TV", Input.TV);
+    this.createInputService(2, "AM", Input.AM);
+    this.createInputService(3, "FM", Input.FM);
+    this.createInputService(4, "Tape 1", Input.Tape1);
+    this.createInputService(5, "Tape 2", Input.Tape2);
+    this.createInputService(6, "CD", Input.CD);
+    this.createInputService(7, "PHONO", Input.Phono);
 
     // Speaker
     const speaker = this.getOrCreateService(this.Service.TelevisionSpeaker);
@@ -103,21 +103,21 @@ export class TvAccessory {
     // state updates
     // this also triggers an update of the state from the device
     this.device.getState()
-      .on('isOn', (v: boolean) => {
+      .on("isOn", (v: boolean) => {
         this.main.updateCharacteristic(this.Characteristic.Active, v);
         speaker.updateCharacteristic(this.Characteristic.Active, v);
       })
-      .on('inputSource', (v: Input) => {
+      .on("inputSource", (v: Input) => {
         this.main.updateCharacteristic(this.Characteristic.ActiveIdentifier, this.statusRegister.get(v)!);
       })
-      .on('isMute', (v: boolean) => {
+      .on("isMute", (v: boolean) => {
         speaker.updateCharacteristic(this.Characteristic.Mute, v);
         vol.updateCharacteristic(this.Characteristic.On, !v); //inverted
       })
-      .on('isLoudness', (v: boolean) => {
+      .on("isLoudness", (v: boolean) => {
         loudness.updateCharacteristic(this.Characteristic.On, v);
       })
-      .on('volume', (v: number) => {
+      .on("volume", (v: number) => {
         speaker.updateCharacteristic(this.Characteristic.Volume, this.getRelativeVolume(v));
         vol.updateCharacteristic(this.Characteristic.RotationSpeed, this.getRelativeVolume(v));
       });
@@ -125,7 +125,7 @@ export class TvAccessory {
     this.accessory.context.state = this.device.getState();
 
     // shutdown hook
-    platform.api.on('shutdown', () => {
+    platform.api.on("shutdown", () => {
       this.device.shutdown();
     });
   }
@@ -167,7 +167,7 @@ export class TvAccessory {
     }
     case this.Characteristic.RemoteKey.SELECT:
     default:
-      this.log.debug('Unsupported remote key pressed:', value.toString());
+      this.log.debug("Unsupported remote key pressed:", value.toString());
     }
   }
 
@@ -195,14 +195,14 @@ export class TvAccessory {
   }
 
   private toBoolean(v: CharacteristicValue) {
-    if (typeof v === 'boolean') {
+    if (typeof v === "boolean") {
       return v;
     }
-    if (typeof v === 'number') {
+    if (typeof v === "number") {
       return v !== 0;
     }
-    if (typeof v === 'string') {
-      return v.toLowerCase() === 'true';
+    if (typeof v === "string") {
+      return v.toLowerCase() === "true";
     }
     return false;  // Default to false for unknown types
   }

@@ -1,7 +1,7 @@
-import { API, Characteristic, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service } from 'homebridge';
+import { API, Characteristic, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service } from "homebridge";
 
-import { PLUGIN_NAME } from './settings';
-import { TvAccessory } from './tvAccessory';
+import { PLUGIN_NAME } from "./settings";
+import { TvAccessory } from "./tvAccessory";
 
 /**
  * The main constructor for the plugin. Parses the user config and registers accessories with Homebridge.
@@ -23,12 +23,12 @@ export class AtelierPlatform implements DynamicPlatformPlugin {
 
     // Fired when all cached accessories have been restored. Dynamic Platform plugins should only
     // register new accessories after this event was fired, to ensure they weren't added already.
-    this.api.on('didFinishLaunching', () => {
-      log.debug('Executed didFinishLaunching callback');
+    this.api.on("didFinishLaunching", () => {
+      log.debug("Executed didFinishLaunching callback");
       this.registerDevices();
     });
 
-    this.log.debug('Finished initializing platform:', this.config.name);
+    this.log.debug("Finished initializing platform:", this.config.name);
   }
 
   /**
@@ -36,7 +36,7 @@ export class AtelierPlatform implements DynamicPlatformPlugin {
    * It should be used to set up event handlers for characteristics and update any respective values.
    */
   configureAccessory(accessory: PlatformAccessory) {
-    this.log.info('Loading accessory from cache:', accessory.displayName);
+    this.log.info("Loading accessory from cache:", accessory.displayName);
 
     // add the restored accessory to the cache
     this.accessories.push(accessory);
@@ -56,7 +56,7 @@ export class AtelierPlatform implements DynamicPlatformPlugin {
       let accessory = this.accessories.find(accessory => accessory.UUID === uuid);
 
       if (!accessory) {
-        this.log.info('Adding new accessory:', name);
+        this.log.info("Adding new accessory:", name);
 
         // create a new accessory
         accessory = new this.api.platformAccessory(name, uuid);
@@ -71,7 +71,7 @@ export class AtelierPlatform implements DynamicPlatformPlugin {
         // link the accessory to your platform
         this.api.publishExternalAccessories(PLUGIN_NAME, [accessory]);
       } else {
-        this.log.info('Restoring existing accessory from cache:', name);
+        this.log.info("Restoring existing accessory from cache:", name);
       }
 
       // create the accessory handler for the accessory

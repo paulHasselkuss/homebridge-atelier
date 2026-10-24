@@ -145,7 +145,7 @@ export class CmdHandler {
             this.state.isOn = false;
           }
           callback();
-        }, 500);
+        }, 750);
       } else {
         callback();
       }
